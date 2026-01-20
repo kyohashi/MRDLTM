@@ -26,8 +26,8 @@ generate_toy_data(
 \value{
 A list containing:
 \itemize{
-\item {observed}{List of observed data (y, x)}
-\item {true_params}{List of ground truth parameters}
+\item observations: List of observed data (y, x)
+\item true_params: List of ground truth parameters
 }
 }
 \description{
