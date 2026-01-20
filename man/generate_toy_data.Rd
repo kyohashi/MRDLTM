@@ -8,7 +8,7 @@ generate_toy_data(
   n_cust = 10,
   n_item = 50,
   n_topic = 3,
-  length_t = 30,
+  length_time = 30,
   n_var = 2
 )
 }
@@ -19,7 +19,7 @@ generate_toy_data(
 
 \item{n_topic}{Number of latent topics (Z)}
 
-\item{length_t}{Length of time points (T)}
+\item{length_time}{Length of time points (T)}
 
 \item{n_var}{Number of marketing covariates (M)}
 }
