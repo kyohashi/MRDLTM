@@ -2,4 +2,5 @@
 
 export(generate_toy_data)
 importFrom(Rcpp,sourceCpp)
+importFrom(stats,rnorm)
 useDynLib(MRDLTM, .registration = TRUE)
