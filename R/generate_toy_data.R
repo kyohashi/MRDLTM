@@ -12,7 +12,7 @@
 #' @return A list containing:
 #' \itemize{
 #'   \item {observed}{List of observed data (y, x)}
-#'   \item {true_params}{List of ground truth parameters (beta, alpha, theta, z)}
+#'   \item {true_params}{List of ground truth parameters}
 #' }
 #' @export
 generate_toy_data = function(n_cust = 10, n_item = 50, n_topic = 3, length_time = 30, n_var = 2) {
