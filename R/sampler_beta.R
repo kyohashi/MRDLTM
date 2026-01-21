@@ -39,9 +39,7 @@ sample_beta = function(active_data, state, x_it){
 
       ## X_zi
       times = active_data$time[idx]
-      X_zi = matrix(0, nrow = length(idx), ncol = n_var)
-      for (k in 1:length(idx))
-        X_zi[k,] = x_it[i, times[k], ]
+      X_zi = matrix(x_it[i, times, ], nrow = length(idx), ncol = n_var)
 
       # --- posterior parameters ---
       R = t(X_zi) %*% X_zi + V_i_inv
