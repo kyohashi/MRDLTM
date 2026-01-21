@@ -12,6 +12,7 @@ LinkingTo:
     Rcpp
 Imports: 
     dplyr,
+    MASS,
     Rcpp,
     truncnorm
 Suggests: 
