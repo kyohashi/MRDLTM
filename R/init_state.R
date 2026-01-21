@@ -26,7 +26,6 @@ init_state = function(active_data, n_item, n_cust, n_topic, length_time, n_var, 
   state$z_cit = sample(1:n_topic, nrow(active_data), replace = TRUE)
 
   # --- response coef. (beta_zi) ---
-  n_var = n_var + 1 # add intercept
   state$beta_zi = array(0, dim = c(n_topic, n_item, n_var))
 
   # --- Prior params of beta ---

@@ -7,7 +7,7 @@
 #' @param n_item Number of items (I)
 #' @param n_topic Number of latent topics (Z)
 #' @param length_time Length of time points (T)
-#' @param n_var Number of marketing covariates (M)
+#' @param n_var Number of marketing covariates including intercept (M)
 #'
 #' @return A list containing:
 #' \itemize{
@@ -20,20 +20,19 @@ generate_toy_data = function(n_cust = 10, n_item = 50, n_topic = 3, length_time 
   set.seed(42)
 
   # --- Generate Marketing Covariates (x_it) ---
-  x_wo_intercept = array(rnorm(n_item * length_time * n_var), dim = c(n_item, length_time, n_var))
+  x_wo_intercept = array(rnorm(n_item * length_time * (n_var - 1)), dim = c(n_item, length_time, n_var - 1))
   ## add constant
-  x_it = array(1, dim = c(n_item, length_time, n_var + 1))
-  x_it[, , 2:(n_var + 1)] = x_wo_intercept # Fill the rest
-  dim_var = n_var + 1
+  x_it = array(1, dim = c(n_item, length_time, n_var))
+  x_it[, , 2:n_var] = x_wo_intercept # Fill the rest
 
   # --- Generate Response Coefficients (beta_zi) ---
   ## beta_zi ~ N(mu_i, V_i)
-  mu_i = matrix(rnorm(n_item * dim_var, mean = 0, sd = 0.5), nrow = n_item, ncol = dim_var)
+  mu_i = matrix(rnorm(n_item * n_var, mean = 0, sd = 0.5), nrow = n_item, ncol = n_var)
   V_i = 0.2 # Common variance across items
-  beta_zi = array(0, dim = c(n_topic, n_item, dim_var))
+  beta_zi = array(0, dim = c(n_topic, n_item, n_var))
   for (z in 1:n_topic){
     for (i in 1:n_item){
-      beta_zi[z, i, ] = mu_i[i, ] + rnorm(dim_var, sd = sqrt(V_i))
+      beta_zi[z, i, ] = mu_i[i, ] + rnorm(n_var, sd = sqrt(V_i))
     }
   }
 
