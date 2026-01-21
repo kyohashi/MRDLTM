@@ -7,18 +7,20 @@ test_that("sample_u correctly samples utilities", {
     y_cit = c(1,0)
   )
 
-  state = list(
-    z_cit = c(1,1),
-    beta_zi = array(0.5, dim = c(1,1,1)) # Topic 1, Item 1, Intercept Only
+  state = init_state(
+    active_data = active_data,
+    n_item = 1,
+    n_cust = 1,
+    n_topic = 2,
+    length_time = 2,
+    n_var = 1,
+    p_dim = 1
   )
 
-  x_it = array(1, dim = c(1, 2, 1))
-
-  # --- sample ---
-  u_samples = sample_u(active_data, state, x_it)
+  x_it <- array(c(1, 0.5), dim = c(1, 2, 2))
 
   # --- test ---
-  expect_length(u_samples, 2)
-  expect_true(u_samples[1] > 0) # y=1
-  expect_true(u_samples[2] <= 0) # y=0
+  sample_u(active_data, state, x_it)
+  expect_true(state$u_cit[1] > 0) # y=1
+  expect_true(state$u_cit[2] < 0) # y=0
 })
