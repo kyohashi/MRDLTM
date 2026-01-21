@@ -3,6 +3,8 @@
 export(generate_toy_data)
 export(mrdltm_mcmc)
 export(mrdltm_model)
+importFrom(MASS,mvrnorm)
+importFrom(MCMCpack,riwish)
 importFrom(Rcpp,sourceCpp)
 importFrom(dplyr,filter)
 importFrom(dplyr,group_by)

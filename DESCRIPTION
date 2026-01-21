@@ -13,6 +13,7 @@ LinkingTo:
 Imports: 
     dplyr,
     MASS,
+    MCMCpack,
     Rcpp,
     truncnorm
 Suggests: 
