@@ -6,11 +6,11 @@
 #' @param observations A list containing:
 #'   \itemize{
 #'     \item \code{data}: data.frame with (cust, item, time, y_cit)
-#'     \item \code{x_it}: 3D array of marketing covariates [item, time, n_var]
-#'     \item \code{Dc}: matrix of customer covariates [n_cust, p_dim]. If NULL, defaults to local level.
+#'     \item \code{x_it}: 3D array of marketing covariates (item, time, n_var)
+#'     \item \code{Dc}: matrix of customer covariates (n_cust, p_dim). If NULL, defaults to local level.
 #'   }
 #' @param n_topic Number of latent topics (Z)
-#' @param Gt System matrix [p_dim x p_dim]. Defaults to a local level model.
+#' @param Gt System matrix (p_dim x p_dim). Defaults to a local level model.
 #' @param ... Additional hyperparameters for priors.
 #'
 #' @return An object of class "mrdltm_model"

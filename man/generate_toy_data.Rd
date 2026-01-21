@@ -9,7 +9,8 @@ generate_toy_data(
   n_item = 50,
   n_topic = 3,
   length_time = 30,
-  n_var = 2
+  n_var = 2,
+  p_dim = 1
 )
 }
 \arguments{
@@ -21,12 +22,14 @@ generate_toy_data(
 
 \item{length_time}{Length of time points (T)}
 
-\item{n_var}{Number of marketing covariates (M)}
+\item{n_var}{Number of marketing covariates including intercept (M)}
+
+\item{p_dim}{Dimension of customer covariates including intercept (P)}
 }
 \value{
 A list containing:
 \itemize{
-\item observations: List of observed data (y, x)
+\item observations: List of observed data (data, x_it, Dc)
 \item true_params: List of ground truth parameters
 }
 }
