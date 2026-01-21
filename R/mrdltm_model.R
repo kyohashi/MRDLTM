@@ -3,33 +3,42 @@
 #' @description
 #' Constructor for an MR-DLTM object.
 #'
+#' @param observations A list containing:
+#'   \itemize{
+#'     \item \code{data}: data.frame with (cust, item, time, y_cit)
+#'     \item \code{x_it}: 3D array of marketing covariates [item, time, n_var]
+#'     \item \code{Dc}: matrix of customer covariates [n_cust, p_dim]. If NULL, defaults to local level.
+#'   }
 #' @param n_topic Number of latent topics (Z)
-#' @param p_dim Dimension of the DLM state vector alpha_zt.
-#' @param Dc Customer-level p-dimensional covariates such as demographics. If NULL, defaults to a Local Level model(p_dim = 1, Ft = 1).
 #' @param Gt System matrix [p_dim x p_dim]. Defaults to a local level model.
 #' @param ... Additional hyperparameters for priors.
 #'
 #' @return An object of class "mrdltm_model"
 #' @export
-mrdltm_model = function(n_topic = 3, p_dim = 1, Dc = NULL, Gt = NULL, ...){
+mrdltm_model = function(observations, n_topic = 3, Gt = NULL, ...){
+
+  # Default Dc
+  if (is.null(observations$Dc)) {
+    n_cust = length(unique(observations$data$cust))
+    observations$Dc = matrix(1, nrow = n_cust, ncol = 1) # Default: Local Level Model
+    p_dim = 1
+    use_custom_D = FALSE
+  } else {
+    p_dim = ncol(observations$Dc)
+    use_custom_D = TRUE
+  }
 
   # Default Gt (Local level)
   if (is.null(Gt)) Gt = diag(1, p_dim)
 
-  # Default Dc
-  if (is.null(Dc)) {
-    # Simple Local Level: Dc will be constructed later based on unique customers
-    use_custom_D = FALSE
-  } else {
-    if (ncol(Dc) != p_dim) stop("ncol(Dc) must match p_dim")
-    use_custom_D = TRUE
-  }
+  # Validation
+  if (nrow(Gt) != p_dim) stop("Gt dimension must match p_dim from Dc.")
 
   model = list(
+    observations = observations,
     n_topic = n_topic,
     p_dim = p_dim,
     Gt = Gt,
-    Dc = Dc,
     use_custom_D = use_custom_D,
     priors = list(...)
   )
