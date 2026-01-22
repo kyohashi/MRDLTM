@@ -51,6 +51,26 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// sample_mu_V_cpp
+List sample_mu_V_cpp(NumericVector beta_zi_flat, NumericMatrix mu_i_mat, NumericVector V_i_flat, arma::vec mu_tilde, double sigma_tilde_mu, double w_tilde, arma::mat W_tilde, int n_topic, int n_item, int n_var);
+RcppExport SEXP _MRDLTM_sample_mu_V_cpp(SEXP beta_zi_flatSEXP, SEXP mu_i_matSEXP, SEXP V_i_flatSEXP, SEXP mu_tildeSEXP, SEXP sigma_tilde_muSEXP, SEXP w_tildeSEXP, SEXP W_tildeSEXP, SEXP n_topicSEXP, SEXP n_itemSEXP, SEXP n_varSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type beta_zi_flat(beta_zi_flatSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type mu_i_mat(mu_i_matSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type V_i_flat(V_i_flatSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type mu_tilde(mu_tildeSEXP);
+    Rcpp::traits::input_parameter< double >::type sigma_tilde_mu(sigma_tilde_muSEXP);
+    Rcpp::traits::input_parameter< double >::type w_tilde(w_tildeSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type W_tilde(W_tildeSEXP);
+    Rcpp::traits::input_parameter< int >::type n_topic(n_topicSEXP);
+    Rcpp::traits::input_parameter< int >::type n_item(n_itemSEXP);
+    Rcpp::traits::input_parameter< int >::type n_var(n_varSEXP);
+    rcpp_result_gen = Rcpp::wrap(sample_mu_V_cpp(beta_zi_flat, mu_i_mat, V_i_flat, mu_tilde, sigma_tilde_mu, w_tilde, W_tilde, n_topic, n_item, n_var));
+    return rcpp_result_gen;
+END_RCPP
+}
 // sample_u_cpp
 NumericVector sample_u_cpp(IntegerVector y_cit, NumericMatrix x_it_matrix, NumericVector beta_zi_flat, IntegerVector z_cit, IntegerVector item_idx, IntegerVector time_idx, int n_topic, int n_item, int n_var);
 RcppExport SEXP _MRDLTM_sample_u_cpp(SEXP y_citSEXP, SEXP x_it_matrixSEXP, SEXP beta_zi_flatSEXP, SEXP z_citSEXP, SEXP item_idxSEXP, SEXP time_idxSEXP, SEXP n_topicSEXP, SEXP n_itemSEXP, SEXP n_varSEXP) {
@@ -95,6 +115,7 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_MRDLTM_sample_alpha_cpp", (DL_FUNC) &_MRDLTM_sample_alpha_cpp, 10},
     {"_MRDLTM_sample_beta_cpp", (DL_FUNC) &_MRDLTM_sample_beta_cpp, 10},
+    {"_MRDLTM_sample_mu_V_cpp", (DL_FUNC) &_MRDLTM_sample_mu_V_cpp, 10},
     {"_MRDLTM_sample_u_cpp", (DL_FUNC) &_MRDLTM_sample_u_cpp, 9},
     {"_MRDLTM_sample_z_cpp", (DL_FUNC) &_MRDLTM_sample_z_cpp, 11},
     {NULL, NULL, 0}
