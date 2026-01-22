@@ -35,7 +35,7 @@ generate_toy_data = function(n_cust = 10, n_item = 50, n_topic = 3, length_time 
   # --- 3. Generate Response Coefficients (beta_zi) ---
   # beta_zi ~ N(mu_i, V_i)
   mu_i = matrix(rnorm(n_item * n_var, mean = 0, sd = 0.5), nrow = n_item, ncol = n_var)
-  V_i = 0.2
+  V_i = 3.0 # set relatively large variance for identifiability
   beta_zi = array(0, dim = c(n_topic, n_item, n_var))
   for (z in 1:n_topic) {
     for (i in 1:n_item) {
