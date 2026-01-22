@@ -17,7 +17,7 @@ init_state = function(active_data, n_item, n_cust, n_topic, length_time, n_var, 
 
   # Create a new environment for the state.
   # This avoids the overhead of list copying in every MCMC iteration.
-  state <- new.env(parent = emptyenv())
+  state = new.env(parent = emptyenv())
 
   # --- utility (u_cit) ---
   state$u_cit = ifelse(active_data$y_cit > 0, 0.5, -0.5)
@@ -49,8 +49,8 @@ init_state = function(active_data, n_item, n_cust, n_topic, length_time, n_var, 
   state$b2_z = rep(0.1, n_z_dlm) # system variance
 
   # --- Polya-Gamma parameters ---
-  state$omega_zct <- array(1, dim = c(n_z_dlm, n_cust, length_time))
-  state$kappa_zct <- array(0, dim = c(n_z_dlm, n_cust, length_time))
+  state$omega_zct = array(1, dim = c(n_z_dlm, n_cust, length_time))
+  state$kappa_zct = array(0, dim = c(n_z_dlm, n_cust, length_time))
 
   return(state)
 }
@@ -92,4 +92,57 @@ filter_active_data = function(data) {
     semi_join(tc_set, by = c("cust", "time"))
 
   return(active_data)
+}
+
+#' Convert MCMC samples to array for bayesplot
+#'
+#' @param x An object of class "mrdltm_mcmc".
+#' @param parameter Name of the parameter group to extract.
+#' @param ... Not used.
+#'
+#' @return A 3D array [iteration, chain, parameter]
+#' @export
+as.array.mrdltm_mcmc = function(x, parameter = "log_lik", ...) {
+  samples = x[[parameter]]
+
+  if (is.null(samples)) stop(paste("Parameter", parameter, "not found in results."))
+
+  # --- Case: log_lik (Vector [iter]) ---
+  if (parameter == "log_lik") {
+    out = array(samples, dim = c(length(samples), 1, 1))
+    dimnames(out) = list(NULL, "chain:1", "log_lik")
+    return(out)
+  }
+
+  # --- Case: Variance params (Matrix [iter, n_z_dlm]) ---
+  if (parameter %in% c("a2_z", "b2_z")) {
+    n_z = ncol(samples)
+    out = array(samples, dim = c(nrow(samples), 1, n_z))
+    dimnames(out) = list(NULL, "chain:1", paste0(parameter, "[", 1:n_z, "]"))
+    return(out)
+  }
+
+  # --- Case: multi-dim arrays (beta, alpha, mu_i, V_i) ---
+  dims = dim(samples)
+  n_iter = dims[1]
+  total_params = prod(dims[2:length(dims)])
+
+  # Flatten other dimensions into one parameter dimension
+  out = array(samples, dim = c(n_iter, 1, total_params))
+
+  # Generate labels based on dimension structure
+  if (parameter == "beta") {
+    # beta [iter, topic, item, var]
+    p_names = expand.grid(v = 1:dims[4], i = 1:dims[3], z = 1:dims[2])
+    names_vec = apply(p_names, 1, function(p) sprintf("beta[z%d,i%d,v%d]", p[3], p[2], p[1]))
+  } else if (parameter == "alpha") {
+    # alpha [iter, topic-1, time, p_dim]
+    p_names = expand.grid(p = 1:dims[4], t = 1:dims[3], z = 1:dims[2])
+    names_vec = apply(p_names, 1, function(p) sprintf("alpha[z%d,t%d,p%d]", p[3], p[2], p[1]))
+  } else {
+    names_vec = paste0(parameter, "[", 1:total_params, "]")
+  }
+
+  dimnames(out) = list(NULL, "chain:1", names_vec)
+  return(out)
 }
