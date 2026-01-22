@@ -15,7 +15,7 @@ test_that("sample_dlm_vars updates variances without error", {
   priors = list()
 
   # --- Execution ---
-  expect_error(sample_dlm_vars(state, Dc, n_topic, length_time, p_dim, priors), NA)
+  expect_error(sample_dlm_vars(state, Dc, n_topic, length_time, n_cust, p_dim, priors), NA)
 
   # --- Verification ---
   expect_length(state$a2_z, 1)

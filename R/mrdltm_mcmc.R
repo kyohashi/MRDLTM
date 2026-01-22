@@ -68,7 +68,7 @@ mrdltm_mcmc = function(model, iter = 2000, burnin = 1000) {
     # D. Topic Occupancy (DLM part)
     sample_eta(active_data, state, obs$Dc, n_cust, n_topic, length_time)
     sample_alpha(state, obs$Dc, n_topic, length_time, p_dim, obs$priors)
-    sample_dlm_vars(state, obs$Dc, n_topic, length_time, p_dim, obs$priors)
+    sample_dlm_vars(state, obs$Dc, n_topic, length_time, n_cust, p_dim, obs$priors)
 
     # --- 5. Record MCMC Samples ---
     history$beta[m, , , ]  = state$beta_zi

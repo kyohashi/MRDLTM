@@ -8,59 +8,34 @@
 #' @param Dc Matrix of customer covariates (n_cust x p_dim).
 #' @param n_topic Total number of topics (Z).
 #' @param length_time Total length of time points (T).
+#' @param n_cust Total number of customers (C).
 #' @param p_dim Dimension of customer covariates (P).
 #' @param priors A list of hyperparameters from the model object.
 #'
 #' @return NULL
 #' @importFrom stats rgamma
 #' @noRd
-sample_dlm_vars = function(state, Dc, n_topic, length_time, p_dim, priors) {
-  n_z_dlm = n_topic - 1
-  n_cust = nrow(Dc)
+sample_dlm_vars = function(state, Dc, n_topic, length_time, n_cust, p_dim, priors) {
+  # Default hyperparameters if not provided
+  a2_shape = if (!is.null(priors$a2_shape)) priors$a2_shape else 0.01
+  a2_scale = if (!is.null(priors$a2_scale)) priors$a2_scale else 0.01
+  b2_shape = if (!is.null(priors$b2_shape)) priors$b2_shape else 0.01
+  b2_scale = if (!is.null(priors$b2_scale)) priors$b2_scale else 0.01
 
-  # --- 1. Hyperparameters ---
-  # Observation variance priors (a2_z)
-  nu_a0    = if (!is.null(priors$nu_a0)) priors$nu_a0 else 0.01
-  delta_a0 = if (!is.null(priors$delta_a0)) priors$delta_a0 else 0.01
+  res = sample_dlm_vars_cpp(
+    eta_zct_flat   = as.numeric(state$eta_zct),
+    alpha_zt_flat  = as.numeric(state$alpha_zt),
+    Dc_mat         = as.matrix(Dc),
+    a2_prior_shape = a2_shape,
+    a2_prior_scale = a2_scale,
+    b2_prior_shape = b2_shape,
+    b2_prior_scale = b2_scale,
+    n_topic        = n_topic,
+    n_time         = length_time,
+    n_cust         = n_cust,
+    p_dim          = p_dim
+  )
 
-  # System variance priors (b2_z)
-  nu_b0    = if (!is.null(priors$nu_b0)) priors$nu_b0 else 0.01
-  delta_b0 = if (!is.null(priors$delta_b0)) priors$delta_b0 else 0.01
-
-  # Initial state mean (mz0) for system residuals at t=1
-  mz0 = if (!is.null(priors$mz0)) priors$mz0 else rep(0, p_dim)
-
-  for (k in 1:n_z_dlm) {
-    # --- 2. Sample a2_z (Observation Variance) ---
-    # Observation residuals: eta_kct - D_c %*% alpha_kt
-    eta_pred = Dc %*% t(state$alpha_zt[k, , ]) # [C x T]
-    residuals_a = (state$eta_zct[k, , ] - eta_pred)^2
-
-    # nu_an = nu_a0 + C * T
-    nu_an = nu_a0 + (n_cust * length_time)
-    # delta_an = delta_a0 + sum(residuals^2)
-    delta_an = delta_a0 + sum(residuals_a)
-
-    # Inverse-Gamma sampling
-    state$a2_z[k] = 1 / rgamma(1, shape = nu_an / 2, rate = delta_an / 2)
-
-    # --- 3. Sample b2_z (System/Evolution Variance) ---
-    # System residuals: alpha_kt - alpha_{k,t-1}
-    # For t=1, we use (alpha_k1 - mz0)
-    alpha_k_mat = matrix(state$alpha_zt[k, , ], nrow = length_time, ncol = p_dim)
-
-    diff_alpha = matrix(0, nrow = length_time, ncol = p_dim)
-    diff_alpha[1, ] = alpha_k_mat[1, ] - mz0
-    if (length_time > 1) {
-      diff_alpha[2:length_time, ] = alpha_k_mat[2:length_time, ] - alpha_k_mat[1:(length_time-1), ]
-    }
-
-    # nu_bn = nu_b0 + T * P
-    nu_bn = nu_b0 + (length_time * p_dim)
-    # delta_bn = delta_b0 + sum(diff^2)
-    delta_bn = delta_b0 + sum(diff_alpha^2)
-
-    # Inverse-Gamma sampling
-    state$b2_z[k] = 1 / stats::rgamma(1, shape = nu_bn / 2, rate = delta_bn / 2)
-  }
+  state$a2_z = res$a2_z
+  state$b2_z = res$b2_z
 }

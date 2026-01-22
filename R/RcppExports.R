@@ -9,6 +9,10 @@ sample_beta_cpp <- function(u_cit, x_it_matrix, z_cit, item_idx, time_idx, mu_be
     .Call(`_MRDLTM_sample_beta_cpp`, u_cit, x_it_matrix, z_cit, item_idx, time_idx, mu_beta_zi, V_inv_zi, n_topic, n_item, n_var)
 }
 
+sample_dlm_vars_cpp <- function(eta_zct_flat, alpha_zt_flat, Dc_mat, a2_prior_shape, a2_prior_scale, b2_prior_shape, b2_prior_scale, n_topic, n_time, n_cust, p_dim) {
+    .Call(`_MRDLTM_sample_dlm_vars_cpp`, eta_zct_flat, alpha_zt_flat, Dc_mat, a2_prior_shape, a2_prior_scale, b2_prior_shape, b2_prior_scale, n_topic, n_time, n_cust, p_dim)
+}
+
 sample_mu_V_cpp <- function(beta_zi_flat, mu_i_mat, V_i_flat, mu_tilde, sigma_tilde_mu, w_tilde, W_tilde, n_topic, n_item, n_var) {
     .Call(`_MRDLTM_sample_mu_V_cpp`, beta_zi_flat, mu_i_mat, V_i_flat, mu_tilde, sigma_tilde_mu, w_tilde, W_tilde, n_topic, n_item, n_var)
 }
