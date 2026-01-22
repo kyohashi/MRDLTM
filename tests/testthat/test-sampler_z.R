@@ -46,7 +46,7 @@ test_that("sample_z updates topic assignments without error", {
   # --- 2. Execution ---
   # Check for error (Survival test)
   expect_error(
-    sample_z(active_data, state, x_it, n_obs, n_topic, n_cust, n_var, length_time),
+    sample_z(active_data, state, x_it, n_item, n_topic, n_cust, n_var),
     NA
   )
 

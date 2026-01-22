@@ -11,22 +11,71 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// sample_z_cpp
-IntegerVector sample_z_cpp(NumericVector u_cit, NumericVector prob_matrix_flat, int n_topic);
-RcppExport SEXP _MRDLTM_sample_z_cpp(SEXP u_citSEXP, SEXP prob_matrix_flatSEXP, SEXP n_topicSEXP) {
+// sample_beta_cpp
+NumericVector sample_beta_cpp(NumericVector u_cit, NumericMatrix x_it_matrix, IntegerVector z_cit, IntegerVector item_idx, IntegerVector time_idx, NumericMatrix mu_beta_zi, NumericVector V_inv_zi, int n_topic, int n_item, int n_var);
+RcppExport SEXP _MRDLTM_sample_beta_cpp(SEXP u_citSEXP, SEXP x_it_matrixSEXP, SEXP z_citSEXP, SEXP item_idxSEXP, SEXP time_idxSEXP, SEXP mu_beta_ziSEXP, SEXP V_inv_ziSEXP, SEXP n_topicSEXP, SEXP n_itemSEXP, SEXP n_varSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector >::type u_cit(u_citSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type prob_matrix_flat(prob_matrix_flatSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type x_it_matrix(x_it_matrixSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type z_cit(z_citSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type item_idx(item_idxSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type time_idx(time_idxSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type mu_beta_zi(mu_beta_ziSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type V_inv_zi(V_inv_ziSEXP);
     Rcpp::traits::input_parameter< int >::type n_topic(n_topicSEXP);
-    rcpp_result_gen = Rcpp::wrap(sample_z_cpp(u_cit, prob_matrix_flat, n_topic));
+    Rcpp::traits::input_parameter< int >::type n_item(n_itemSEXP);
+    Rcpp::traits::input_parameter< int >::type n_var(n_varSEXP);
+    rcpp_result_gen = Rcpp::wrap(sample_beta_cpp(u_cit, x_it_matrix, z_cit, item_idx, time_idx, mu_beta_zi, V_inv_zi, n_topic, n_item, n_var));
+    return rcpp_result_gen;
+END_RCPP
+}
+// sample_u_cpp
+NumericVector sample_u_cpp(IntegerVector y_cit, NumericMatrix x_it_matrix, NumericVector beta_zi_flat, IntegerVector z_cit, IntegerVector item_idx, IntegerVector time_idx, int n_topic, int n_item, int n_var);
+RcppExport SEXP _MRDLTM_sample_u_cpp(SEXP y_citSEXP, SEXP x_it_matrixSEXP, SEXP beta_zi_flatSEXP, SEXP z_citSEXP, SEXP item_idxSEXP, SEXP time_idxSEXP, SEXP n_topicSEXP, SEXP n_itemSEXP, SEXP n_varSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerVector >::type y_cit(y_citSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type x_it_matrix(x_it_matrixSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type beta_zi_flat(beta_zi_flatSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type z_cit(z_citSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type item_idx(item_idxSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type time_idx(time_idxSEXP);
+    Rcpp::traits::input_parameter< int >::type n_topic(n_topicSEXP);
+    Rcpp::traits::input_parameter< int >::type n_item(n_itemSEXP);
+    Rcpp::traits::input_parameter< int >::type n_var(n_varSEXP);
+    rcpp_result_gen = Rcpp::wrap(sample_u_cpp(y_cit, x_it_matrix, beta_zi_flat, z_cit, item_idx, time_idx, n_topic, n_item, n_var));
+    return rcpp_result_gen;
+END_RCPP
+}
+// sample_z_cpp
+IntegerVector sample_z_cpp(NumericVector u_cit, NumericVector eta_zct_flat, NumericVector beta_zi_flat, NumericMatrix x_it_matrix, IntegerVector cust_idx, IntegerVector item_idx, IntegerVector time_idx, int n_topic, int n_item, int n_cust, int n_var);
+RcppExport SEXP _MRDLTM_sample_z_cpp(SEXP u_citSEXP, SEXP eta_zct_flatSEXP, SEXP beta_zi_flatSEXP, SEXP x_it_matrixSEXP, SEXP cust_idxSEXP, SEXP item_idxSEXP, SEXP time_idxSEXP, SEXP n_topicSEXP, SEXP n_itemSEXP, SEXP n_custSEXP, SEXP n_varSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type u_cit(u_citSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type eta_zct_flat(eta_zct_flatSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type beta_zi_flat(beta_zi_flatSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type x_it_matrix(x_it_matrixSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type cust_idx(cust_idxSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type item_idx(item_idxSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type time_idx(time_idxSEXP);
+    Rcpp::traits::input_parameter< int >::type n_topic(n_topicSEXP);
+    Rcpp::traits::input_parameter< int >::type n_item(n_itemSEXP);
+    Rcpp::traits::input_parameter< int >::type n_cust(n_custSEXP);
+    Rcpp::traits::input_parameter< int >::type n_var(n_varSEXP);
+    rcpp_result_gen = Rcpp::wrap(sample_z_cpp(u_cit, eta_zct_flat, beta_zi_flat, x_it_matrix, cust_idx, item_idx, time_idx, n_topic, n_item, n_cust, n_var));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_MRDLTM_sample_z_cpp", (DL_FUNC) &_MRDLTM_sample_z_cpp, 3},
+    {"_MRDLTM_sample_beta_cpp", (DL_FUNC) &_MRDLTM_sample_beta_cpp, 10},
+    {"_MRDLTM_sample_u_cpp", (DL_FUNC) &_MRDLTM_sample_u_cpp, 9},
+    {"_MRDLTM_sample_z_cpp", (DL_FUNC) &_MRDLTM_sample_z_cpp, 11},
     {NULL, NULL, 0}
 };
 

@@ -11,45 +11,30 @@
 #' @param n_var Number of marketing covariates including intercept (M)
 #'
 #' @return NULL
-#' @importFrom MASS mvrnorm
 #' @noRd
 sample_beta = function(active_data, state, x_it, n_item, n_topic, n_var){
 
-  # Loop through (z, i) combination
-  for (z in 1:n_topic){
-    for (i in 1:n_item){
-      # identify corresponding indices for (z, i)
-      idx = which(active_data$item == i & state$z_cit == z)
+  mu_beta_zi <- as.matrix(state$mu_i)
 
-      # --- get required statistics ---
-      ## priors
-      mu_i = state$mu_i[i, ]
-      V_i_inv = solve(state$V_i[i,,])
-
-      if (length(idx) == 0) {
-        # If no observations, sample from the hierarchical prior
-        state$beta_zi[z, i, ] = as.vector(
-          mvrnorm(1, mu = mu_i, Sigma = state$V_i[i, , ])
-        )
-        next
-      }
-
-      ## utility
-      u_zi = state$u_cit[idx]
-
-      ## X_zi
-      times = active_data$time[idx]
-      X_zi = matrix(x_it[i, times, ], nrow = length(idx), ncol = n_var)
-
-      # --- posterior parameters ---
-      R = t(X_zi) %*% X_zi + V_i_inv
-      R_inv = solve(R)
-      post_mean = R_inv %*% (t(X_zi) %*% u_zi + V_i_inv %*% mu_i)
-
-      # --- sample from poserior ---
-      state$beta_zi[z, i, ] = as.vector(
-        mvrnorm(1, mu = post_mean, Sigma = R_inv)
-      )
+  V_inv_izi_array <- array(0, dim = c(n_var, n_var, n_item))
+  for (i in 1:n_item) {
+    V_i_mat <- state$V_i[i, , ]
+    if (is.null(dim(V_i_mat))) {
+      V_i_mat <- matrix(V_i_mat, n_var, n_var)
     }
+    V_inv_izi_array[, , i] <- solve(V_i_mat)
   }
+
+  state$beta_zi = sample_beta_cpp(
+    u_cit = state$u_cit,
+    x_it_matrix = matrix(x_it, ncol = n_var),
+    z_cit = state$z_cit,
+    item_idx = active_data$item,
+    time_idx = active_data$time,
+    mu_beta_zi = mu_beta_zi,
+    V_inv_zi = as.numeric(V_inv_izi_array),
+    n_topic = n_topic,
+    n_item = n_item,
+    n_var = n_var
+  )
 }

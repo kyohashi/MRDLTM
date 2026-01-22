@@ -56,10 +56,10 @@ mrdltm_mcmc = function(model, iter = 2000, burnin = 1000) {
   for (m in 1:iter) {
 
     # A. Topic Assignment (Marginalized sample_z should come first for better mixing)
-    sample_z(active_data, state, obs$x_it, n_obs, n_topic, n_cust, n_var, length_time)
+    sample_z(active_data, state, obs$x_it, n_item, n_topic, n_cust, n_var)
 
     # B. Latent Utility (Probit part)
-    sample_u(active_data, state, obs$x_it)
+    sample_u(active_data, state, obs$x_it, n_item, n_topic, n_var)
 
     # C. Response Coefficients (Hierarchical part)
     sample_beta(active_data, state, obs$x_it, n_item, n_topic, n_var)
