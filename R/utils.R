@@ -98,50 +98,75 @@ filter_active_data = function(data) {
 #'
 #' @param x An object of class "mrdltm_mcmc".
 #' @param parameter Name of the parameter group to extract.
+#' @param ... Not used.
 #'
 #' @return A 3D array (iteration, chain, parameter)
 #' @export
-as.array.mrdltm_mcmc = function(x, parameter = "log_lik") {
-  samples = x[[parameter]]
-
-  if (is.null(samples)) stop(paste("Parameter", parameter, "not found in results."))
+as.array.mrdltm_mcmc <- function(x, parameter = "log_lik", ...) {
+  samples <- x[[parameter]]
+  if (is.null(samples)) stop(paste("Parameter", parameter, "not found."))
 
   # --- Case: log_lik (Vector [iter]) ---
   if (parameter == "log_lik") {
-    out = array(samples, dim = c(length(samples), 1, 1))
-    dimnames(out) = list(NULL, "chain:1", "log_lik")
+    out <- array(samples, dim = c(length(samples), 1, 1))
+    dimnames(out) <- list(NULL, "chain:1", "log_lik")
     return(out)
   }
 
-  # --- Case: Variance params (Matrix [iter, n_z_dlm]) ---
+  # --- Case: Variance params (Matrix [iter, n_topic-1]) ---
   if (parameter %in% c("a2_z", "b2_z")) {
-    n_z = ncol(samples)
-    out = array(samples, dim = c(nrow(samples), 1, n_z))
-    dimnames(out) = list(NULL, "chain:1", paste0(parameter, "[", 1:n_z, "]"))
+    samples_mat <- as.matrix(samples)
+    out <- array(samples_mat, dim = c(nrow(samples_mat), 1, ncol(samples_mat)))
+    dimnames(out) <- list(NULL, "chain:1", paste0(parameter, "[", 1:ncol(samples_mat), "]"))
     return(out)
   }
 
-  # --- Case: multi-dim arrays (beta, alpha, mu_i, V_i) ---
-  dims = dim(samples)
-  n_iter = dims[1]
-  total_params = prod(dims[2:length(dims)])
+  # --- Case: Multi-dim arrays (beta, alpha, mu_i, V_i) ---
+  dims <- dim(samples)
+  n_iter <- dims[1]
+  total_params <- prod(dims[-1])
 
-  # Flatten other dimensions into one parameter dimension
-  out = array(samples, dim = c(n_iter, 1, total_params))
+  out <- array(samples, dim = c(n_iter, 1, total_params))
 
   # Generate labels based on dimension structure
   if (parameter == "beta") {
     # beta [iter, topic, item, var]
-    p_names = expand.grid(v = 1:dims[4], i = 1:dims[3], z = 1:dims[2])
-    names_vec = apply(p_names, 1, function(p) sprintf("beta[z%d,i%d,v%d]", p[3], p[2], p[1]))
+    p_names <- expand.grid(v = 1:dims[4], i = 1:dims[3], z = 1:dims[2])
+    names_vec <- apply(p_names, 1, function(p) sprintf("beta[z%d,i%d,v%d]", p[3], p[2], p[1]))
   } else if (parameter == "alpha") {
     # alpha [iter, topic-1, time, p_dim]
-    p_names = expand.grid(p = 1:dims[4], t = 1:dims[3], z = 1:dims[2])
-    names_vec = apply(p_names, 1, function(p) sprintf("alpha[z%d,t%d,p%d]", p[3], p[2], p[1]))
+    p_names <- expand.grid(p = 1:dims[4], t = 1:dims[3], z = 1:dims[2])
+    names_vec <- apply(p_names, 1, function(p) sprintf("alpha[z%d,t%d,p%d]", p[3], p[2], p[1]))
   } else {
-    names_vec = paste0(parameter, "[", 1:total_params, "]")
+    names_vec <- paste0(parameter, "[", 1:total_params, "]")
   }
 
-  dimnames(out) = list(NULL, "chain:1", names_vec)
+  dimnames(out) <- list(NULL, "chain:1", names_vec)
   return(out)
+}
+
+#' Extract MCMC Samples with Burn-in and Thinning
+#'
+#' @param x An object of class "mrdltm_mcmc".
+#' @param parameter Name of the parameter group.
+#' @param burnin Number of iterations to discard. Defaults to 0.
+#' @param thin Interval for thinning. Defaults to 1.
+#'
+#' @return A 3D array (iteration, chain, parameter)
+#' @export
+extract_samples <- function(x, parameter = "log_lik", burnin = 0, thin = 1) {
+  # Call the S3 method as.array to get the full array
+  arr <- as.array(x, parameter = parameter)
+
+  iter_total <- dim(arr)[1]
+
+  # Selection logic
+  indices <- seq(from = burnin + 1, to = iter_total, by = thin)
+
+  if (length(indices) == 0) {
+    stop("No samples left after applying burn-in and thinning.")
+  }
+
+  # Subset along the first dimension (Iterations)
+  return(arr[indices, , , drop = FALSE])
 }

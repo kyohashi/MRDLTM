@@ -4,12 +4,14 @@
 \alias{as.array.mrdltm_mcmc}
 \title{Convert MCMC samples to array for bayesplot}
 \usage{
-\method{as.array}{mrdltm_mcmc}(x, parameter = "log_lik")
+\method{as.array}{mrdltm_mcmc}(x, parameter = "log_lik", ...)
 }
 \arguments{
 \item{x}{An object of class "mrdltm_mcmc".}
 
 \item{parameter}{Name of the parameter group to extract.}
+
+\item{...}{Not used.}
 }
 \value{
 A 3D array (iteration, chain, parameter)

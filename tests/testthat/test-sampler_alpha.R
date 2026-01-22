@@ -8,7 +8,7 @@ test_that("sample_alpha runs without error and respects priors", {
   state = new.env()
   state$alpha_zt = array(0, dim = c(n_topic - 1, length_time, p_dim))
   state$eta_zct = array(rnorm(1 * n_cust * length_time), dim = c(1, n_cust, length_time))
-  state$g2_z = rep(0.1, 1)
+  state$b2_z = rep(0.1, 1)
   state$a2_z = rep(0.1, 1)
 
   Dc = matrix(1, nrow = n_cust, ncol = p_dim)
