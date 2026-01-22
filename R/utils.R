@@ -98,11 +98,10 @@ filter_active_data = function(data) {
 #'
 #' @param x An object of class "mrdltm_mcmc".
 #' @param parameter Name of the parameter group to extract.
-#' @param ... Not used.
 #'
-#' @return A 3D array [iteration, chain, parameter]
+#' @return A 3D array (iteration, chain, parameter)
 #' @export
-as.array.mrdltm_mcmc = function(x, parameter = "log_lik", ...) {
+as.array.mrdltm_mcmc = function(x, parameter = "log_lik") {
   samples = x[[parameter]]
 
   if (is.null(samples)) stop(paste("Parameter", parameter, "not found in results."))

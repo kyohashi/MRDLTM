@@ -29,7 +29,7 @@ sample_alpha = function(state, Dc, n_topic, length_time, p_dim, priors) {
 
   for (k in 1:n_z_dlm) {
     # Topic-specific variances
-    g2 = state$g2_z[k]
+    b2 = state$b2_z[k]
     a2 = state$a2_z[k]
 
     # Storage for filtering results
@@ -44,7 +44,7 @@ sample_alpha = function(state, Dc, n_topic, length_time, p_dim, priors) {
       # Time Update (Prediction)
       # alpha_t = alpha_{t-1} + noise (G = Identity matrix for Random Walk)
       m_pred = m_curr
-      R_pred = C_curr + diag(g2, p_dim)
+      R_pred = C_curr + diag(b2, p_dim)
       R_inv = solve(R_pred)
 
       # Observation Update (Filtering)
@@ -69,7 +69,7 @@ sample_alpha = function(state, Dc, n_topic, length_time, p_dim, priors) {
 
     # Recursively sample backward: alpha_t | alpha_{t+1}
     for (t in (length_time - 1):1) {
-      W_mat = diag(g2, p_dim)
+      W_mat = diag(b2, p_dim)
       # Smoothing gain: B_t = C_t * (C_t + W)^{-1}
       # Using solve for C_t + W
       gain = C_filt[t, , ] %*% solve(C_filt[t, , ] + W_mat)

@@ -62,13 +62,13 @@ mrdltm_mcmc = function(model, iter = 2000, burnin = 1000) {
     sample_u(active_data, state, obs$x_it)
 
     # C. Response Coefficients (Hierarchical part)
-    sample_beta(active_data, state, obs$x_it)
-    sample_mu_V(state, priors)
+    sample_beta(active_data, state, obs$x_it, n_item, n_topic, n_var)
+    sample_mu_V(state, n_item, n_topic, n_var, obs$priors)
 
     # D. Topic Occupancy (DLM part)
     sample_eta(active_data, state, obs$Dc, n_cust, n_topic, length_time)
-    sample_alpha(state, obs$Dc, n_topic, length_time, p_dim, priors)
-    sample_dlm_vars(state, obs$Dc, n_topic, length_time, p_dim, priors)
+    sample_alpha(state, obs$Dc, n_topic, length_time, p_dim, obs$priors)
+    sample_dlm_vars(state, obs$Dc, n_topic, length_time, p_dim, obs$priors)
 
     # --- 5. Record MCMC Samples ---
     history$beta[m, , , ]  = state$beta_zi
