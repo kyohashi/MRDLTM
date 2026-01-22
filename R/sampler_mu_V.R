@@ -13,7 +13,7 @@
 #' @importFrom MASS mvrnorm
 #' @importFrom MCMCpack riwish
 #' @noRd
-sample_mu_V = function(state, priors, n_item, n_topic, n_var) {
+sample_mu_V = function(state, n_item, n_topic, n_var, priors) {
 
   # --- Hyperparameters ---
   mu_tilde = if (!is.null(priors$mu_tilde)) priors$mu_tilde else rep(0, n_var)
