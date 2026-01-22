@@ -13,6 +13,14 @@ sample_dlm_vars_cpp <- function(eta_zct_flat, alpha_zt_flat, Dc_mat, a2_prior_sh
     .Call(`_MRDLTM_sample_dlm_vars_cpp`, eta_zct_flat, alpha_zt_flat, Dc_mat, a2_prior_shape, a2_prior_scale, b2_prior_shape, b2_prior_scale, n_topic, n_time, n_cust, p_dim)
 }
 
+sample_eta_prepare_cpp <- function(z_cit_flat, obs_cust, obs_time, eta_zct_flat, n_topic, n_time, n_cust) {
+    .Call(`_MRDLTM_sample_eta_prepare_cpp`, z_cit_flat, obs_cust, obs_time, eta_zct_flat, n_topic, n_time, n_cust)
+}
+
+sample_eta_update_cpp <- function(eta_zct_flat, omega_vec, counts_flat, alpha_zt_flat, Dc_mat, b2_z, n_topic, n_time, n_cust, p_dim) {
+    .Call(`_MRDLTM_sample_eta_update_cpp`, eta_zct_flat, omega_vec, counts_flat, alpha_zt_flat, Dc_mat, b2_z, n_topic, n_time, n_cust, p_dim)
+}
+
 sample_mu_V_cpp <- function(beta_zi_flat, mu_i_mat, V_i_flat, mu_tilde, sigma_tilde_mu, w_tilde, W_tilde, n_topic, n_item, n_var) {
     .Call(`_MRDLTM_sample_mu_V_cpp`, beta_zi_flat, mu_i_mat, V_i_flat, mu_tilde, sigma_tilde_mu, w_tilde, W_tilde, n_topic, n_item, n_var)
 }

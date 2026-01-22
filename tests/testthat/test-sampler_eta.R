@@ -21,7 +21,7 @@ test_that("sample_eta runs without error and updates values", {
 
   # --- Execution ---
   expect_error(
-    sample_eta(active_data, state, Dc, n_cust, n_topic, length_time),
+    sample_eta(active_data, state, Dc, n_cust, n_topic, length_time, p_dim),
     NA
   )
 

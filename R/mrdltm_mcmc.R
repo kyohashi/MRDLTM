@@ -85,7 +85,7 @@ mrdltm_mcmc = function(model, iter = 2000, burnin = 1000) {
 
     # D. Topic Occupancy (DLM part)
     t <- proc.time()
-    sample_eta(active_data, state, obs$Dc, n_cust, n_topic, length_time)
+    sample_eta(active_data, state, obs$Dc, n_cust, n_topic, length_time, p_dim)
     t_eta <- t_eta + (proc.time() - t)[3]
 
     t <- proc.time()
