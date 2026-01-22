@@ -127,21 +127,24 @@ mrdltm_mcmc = function(model, iter = 2000, burnin = 1000) {
 #' Helper to compute log-likelihood for the current state
 #' @noRd
 compute_log_likelihood = function(active_data, state, x_it) {
-  # Marginalized over u: Log Phi(xb) or Log(1-Phi(xb))
-  # Summed over all active observations
-  n_obs = nrow(active_data)
-  log_lik_vec = numeric(n_obs)
+  # Extract dimensions from the state/data
+  n_topic = dim(state$beta_zi)[1]
+  n_item  = dim(state$beta_zi)[2]
+  n_var   = dim(state$beta_zi)[3]
+  n_time  = dim(x_it)[2]
 
-  # This part can be vectorized if performance becomes an issue
-  for (n in 1:n_obs) {
-    z = state$z_cit[n]
-    i = active_data$item[n]
-    t = active_data$time[n]
-    y = active_data$y_cit[n]
+  log_lik = compute_log_likelihood_cpp(
+    z_cit        = as.integer(state$z_cit),
+    item_idx     = as.integer(active_data$item),
+    time_idx     = as.integer(active_data$time),
+    y_cit        = as.integer(active_data$y_cit),
+    beta_zi_flat = as.numeric(state$beta_zi),
+    x_it_flat    = as.numeric(x_it),
+    n_topic      = n_topic,
+    n_item       = n_item,
+    n_time       = n_time,
+    n_var        = n_var
+  )
 
-    xb = sum(x_it[i, t, ] * state$beta_zi[z, i, ])
-    log_lik_vec[n] = stats::pnorm(xb, lower.tail = (y == 1), log.p = TRUE)
-  }
-
-  return(sum(log_lik_vec))
+  return(log_lik)
 }

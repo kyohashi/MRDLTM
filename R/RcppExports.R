@@ -25,3 +25,7 @@ sample_z_cpp <- function(u_cit, eta_zct_flat, beta_zi_flat, x_it_matrix, cust_id
     .Call(`_MRDLTM_sample_z_cpp`, u_cit, eta_zct_flat, beta_zi_flat, x_it_matrix, cust_idx, item_idx, time_idx, n_topic, n_item, n_cust, n_var)
 }
 
+compute_log_likelihood_cpp <- function(z_cit, item_idx, time_idx, y_cit, beta_zi_flat, x_it_flat, n_topic, n_item, n_time, n_var) {
+    .Call(`_MRDLTM_compute_log_likelihood_cpp`, z_cit, item_idx, time_idx, y_cit, beta_zi_flat, x_it_flat, n_topic, n_item, n_time, n_var)
+}
+
