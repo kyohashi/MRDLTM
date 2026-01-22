@@ -76,7 +76,7 @@ mrdltm_mcmc = function(model, iter = 2000, burnin = 1000) {
 
     # C. Response Coefficients (Hierarchical part)
     t <- proc.time()
-    sample_beta(active_data, state, obs$x_it, n_item, n_topic, n_var)
+    sample_beta(active_data, state, obs$x_it, n_item, n_topic, n_var, length_time)
     t_beta <- t_beta + (proc.time() - t)[3]
 
     t <- proc.time()

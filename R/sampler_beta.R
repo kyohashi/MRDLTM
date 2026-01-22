@@ -9,32 +9,29 @@
 #' @param n_item Number of items (I)
 #' @param n_topic Number of latent topics (Z)
 #' @param n_var Number of marketing covariates including intercept (M)
+#' @param length_time Total length of time points (T).
 #'
 #' @return NULL
 #' @noRd
-sample_beta = function(active_data, state, x_it, n_item, n_topic, n_var){
+sample_beta = function(active_data, state, x_it, n_item, n_topic, n_var, length_time){
 
-  mu_beta_zi <- as.matrix(state$mu_i)
-
-  V_inv_izi_array <- array(0, dim = c(n_var, n_var, n_item))
-  for (i in 1:n_item) {
-    V_i_mat <- state$V_i[i, , ]
-    if (is.null(dim(V_i_mat))) {
-      V_i_mat <- matrix(V_i_mat, n_var, n_var)
-    }
-    V_inv_izi_array[, , i] <- solve(V_i_mat)
-  }
-
-  state$beta_zi = sample_beta_cpp(
-    u_cit = state$u_cit,
-    x_it_matrix = matrix(x_it, ncol = n_var),
-    z_cit = state$z_cit,
-    item_idx = active_data$item,
-    time_idx = active_data$time,
-    mu_beta_zi = mu_beta_zi,
-    V_inv_zi = as.numeric(V_inv_izi_array),
-    n_topic = n_topic,
-    n_item = n_item,
-    n_var = n_var
+  # Call optimized C++ sampler
+  # Dimension check: x_it is [I, T, M]
+  res_flat = sample_beta_cpp(
+    z_cit        = as.integer(state$z_cit),
+    item_idx     = as.integer(active_data$item),
+    time_idx     = as.integer(active_data$time),
+    u_cit        = as.numeric(state$u_cit),
+    x_it_flat    = as.numeric(x_it),
+    mu_i_mat     = as.matrix(state$mu_i),
+    # Reorder V_i from [I, M, M] to [M, M, I] for efficient slicing in C++
+    V_i_flat     = as.numeric(aperm(state$V_i, c(2, 3, 1))),
+    n_topic      = n_topic,
+    n_item       = n_item,
+    n_time       = length_time,
+    n_var        = n_var
   )
+
+  # Reshape flattened result back to [Z, I, M]
+  state$beta_zi = array(res_flat, dim = c(n_topic, n_item, n_var))
 }

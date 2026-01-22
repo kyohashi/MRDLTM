@@ -5,8 +5,8 @@ sample_alpha_cpp <- function(eta_zct_flat, Dc_mat, a2_z, b2_z, mz0_vec, Sz0_mat,
     .Call(`_MRDLTM_sample_alpha_cpp`, eta_zct_flat, Dc_mat, a2_z, b2_z, mz0_vec, Sz0_mat, n_topic, n_time, n_cust, p_dim)
 }
 
-sample_beta_cpp <- function(u_cit, x_it_matrix, z_cit, item_idx, time_idx, mu_beta_zi, V_inv_zi, n_topic, n_item, n_var) {
-    .Call(`_MRDLTM_sample_beta_cpp`, u_cit, x_it_matrix, z_cit, item_idx, time_idx, mu_beta_zi, V_inv_zi, n_topic, n_item, n_var)
+sample_beta_cpp <- function(z_cit, item_idx, time_idx, u_cit, x_it_flat, mu_i_mat, V_i_flat, n_topic, n_item, n_time, n_var) {
+    .Call(`_MRDLTM_sample_beta_cpp`, z_cit, item_idx, time_idx, u_cit, x_it_flat, mu_i_mat, V_i_flat, n_topic, n_item, n_time, n_var)
 }
 
 sample_dlm_vars_cpp <- function(eta_zct_flat, alpha_zt_flat, Dc_mat, a2_prior_shape, a2_prior_scale, b2_prior_shape, b2_prior_scale, n_topic, n_time, n_cust, p_dim) {
@@ -29,8 +29,8 @@ sample_u_cpp <- function(y_cit, x_it_matrix, beta_zi_flat, z_cit, item_idx, time
     .Call(`_MRDLTM_sample_u_cpp`, y_cit, x_it_matrix, beta_zi_flat, z_cit, item_idx, time_idx, n_topic, n_item, n_var)
 }
 
-sample_z_cpp <- function(u_cit, eta_zct_flat, beta_zi_flat, x_it_matrix, cust_idx, item_idx, time_idx, n_topic, n_item, n_cust, n_var) {
-    .Call(`_MRDLTM_sample_z_cpp`, u_cit, eta_zct_flat, beta_zi_flat, x_it_matrix, cust_idx, item_idx, time_idx, n_topic, n_item, n_cust, n_var)
+sample_z_cpp <- function(u_cit, eta_flat, beta_flat, x_flat, cust_idx, item_idx, time_idx, rand_u, n_topic, n_item, n_time, n_cust, n_var) {
+    .Call(`_MRDLTM_sample_z_cpp`, u_cit, eta_flat, beta_flat, x_flat, cust_idx, item_idx, time_idx, rand_u, n_topic, n_item, n_time, n_cust, n_var)
 }
 
 compute_log_likelihood_cpp <- function(z_cit, item_idx, time_idx, y_cit, beta_zi_flat, x_it_flat, n_topic, n_item, n_time, n_var) {

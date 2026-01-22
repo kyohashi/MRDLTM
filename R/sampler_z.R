@@ -15,16 +15,29 @@
 #' @noRd
 sample_z = function(active_data, state, x_it, n_item, n_topic, n_cust, n_var) {
 
+  # --- Prepare memory layout for C++ matrix-vector operations ---
+  # beta_zi: [Z, I, M] -> [Z, M, I] to make slice(i) a [Z x M] matrix
+  beta_prep = aperm(state$beta_zi, c(1, 3, 2))
+
+  # x_it: [I, T, M] -> [M, T, I] to make slice(i).col(t) an M-vector
+  x_prep = aperm(x_it, c(3, 2, 1))
+
+  # Pre-generate random uniforms to avoid non-thread-safe R API calls in parallel loop
+  n_obs = length(state$u_cit)
+  rand_u = stats::runif(n_obs)
+
   state$z_cit = sample_z_cpp(
     u_cit        = state$u_cit,
-    eta_zct_flat = as.numeric(state$eta_zct),
-    beta_zi_flat = as.numeric(state$beta_zi),
-    x_it_matrix  = matrix(x_it, ncol = n_var),
-    cust_idx     = active_data$cust,
-    item_idx     = active_data$item,
-    time_idx     = active_data$time,
+    eta_flat     = as.numeric(state$eta_zct),
+    beta_flat    = as.numeric(beta_prep),
+    x_flat       = as.numeric(x_prep),
+    cust_idx     = as.integer(active_data$cust),
+    item_idx     = as.integer(active_data$item),
+    time_idx     = as.integer(active_data$time),
+    rand_u       = rand_u,
     n_topic      = n_topic,
     n_item       = n_item,
+    n_time       = dim(x_it)[2],
     n_cust       = n_cust,
     n_var        = n_var
   )
