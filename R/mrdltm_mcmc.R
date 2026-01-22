@@ -53,22 +53,48 @@ mrdltm_mcmc = function(model, iter = 2000, burnin = 1000) {
   # --- 4. Gibbs Sampling Loop ---
   message(sprintf("Starting Gibbs Sampling: %d iterations (burn-in: %d)", iter, burnin))
 
+  t_z = 0
+  t_u = 0
+  t_beta = 0
+  t_muV = 0
+  t_eta = 0
+  t_alpha = 0
+  t_vars = 0
+  t_lik = 0
+
   for (m in 1:iter) {
 
     # A. Topic Assignment (Marginalized sample_z should come first for better mixing)
+    t <- proc.time()
     sample_z(active_data, state, obs$x_it, n_item, n_topic, n_cust, n_var)
+    t_z <- t_z + (proc.time() - t)[3]
 
     # B. Latent Utility (Probit part)
+    t <- proc.time()
     sample_u(active_data, state, obs$x_it, n_item, n_topic, n_var)
+    t_u <- t_u + (proc.time() - t)[3]
 
     # C. Response Coefficients (Hierarchical part)
+    t <- proc.time()
     sample_beta(active_data, state, obs$x_it, n_item, n_topic, n_var)
+    t_beta <- t_beta + (proc.time() - t)[3]
+
+    t <- proc.time()
     sample_mu_V(state, n_item, n_topic, n_var, obs$priors)
+    t_muV <- t_muV + (proc.time() - t)[3]
 
     # D. Topic Occupancy (DLM part)
+    t <- proc.time()
     sample_eta(active_data, state, obs$Dc, n_cust, n_topic, length_time)
+    t_eta <- t_eta + (proc.time() - t)[3]
+
+    t <- proc.time()
     sample_alpha(state, obs$Dc, n_topic, length_time, p_dim, obs$priors)
+    t_alpha <- t_alpha + (proc.time() - t)[3]
+
+    t <- proc.time()
     sample_dlm_vars(state, obs$Dc, n_topic, length_time, n_cust, p_dim, obs$priors)
+    t_vars <- t_vars + (proc.time() - t)[3]
 
     # --- 5. Record MCMC Samples ---
     history$beta[m, , , ]  = state$beta_zi
@@ -80,12 +106,15 @@ mrdltm_mcmc = function(model, iter = 2000, burnin = 1000) {
 
     # Calculate Log-Likelihood (for convergence diagnostic)
     # Using the marginalized probit likelihood for the current topics
+    t <- proc.time()
     history$log_lik[m] = compute_log_likelihood(active_data, state, obs$x_it)
+    t_lik = t_lik + (proc.time() - t)[3]
 
     # Progress message
     if (m %% 100 == 0) {
       status = ifelse(m <= burnin, "(Burn-in)", "(Sampling)")
       message(sprintf("Iteration %d / %d %s", m, iter, status))
+      message(sprintf("\nIter %d times - \n Z: %.3fs \n U: %.3fs \n Beta: %.3fs \n muV: %.3fs \n Eta: %.3fs \n Alpha: %.3fs \n Vars: %.3fs \n Lik: %.3fs", m, t_z, t_u, t_beta, t_muV, t_eta, t_alpha, t_vars, t_lik))
     }
   }
 
