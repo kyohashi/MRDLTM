@@ -11,6 +11,26 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// sample_alpha_cpp
+NumericVector sample_alpha_cpp(NumericVector eta_zct_flat, NumericMatrix Dc_mat, NumericVector a2_z, NumericVector b2_z, NumericVector mz0_vec, NumericMatrix Sz0_mat, int n_topic, int n_time, int n_cust, int p_dim);
+RcppExport SEXP _MRDLTM_sample_alpha_cpp(SEXP eta_zct_flatSEXP, SEXP Dc_matSEXP, SEXP a2_zSEXP, SEXP b2_zSEXP, SEXP mz0_vecSEXP, SEXP Sz0_matSEXP, SEXP n_topicSEXP, SEXP n_timeSEXP, SEXP n_custSEXP, SEXP p_dimSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type eta_zct_flat(eta_zct_flatSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type Dc_mat(Dc_matSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type a2_z(a2_zSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type b2_z(b2_zSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type mz0_vec(mz0_vecSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type Sz0_mat(Sz0_matSEXP);
+    Rcpp::traits::input_parameter< int >::type n_topic(n_topicSEXP);
+    Rcpp::traits::input_parameter< int >::type n_time(n_timeSEXP);
+    Rcpp::traits::input_parameter< int >::type n_cust(n_custSEXP);
+    Rcpp::traits::input_parameter< int >::type p_dim(p_dimSEXP);
+    rcpp_result_gen = Rcpp::wrap(sample_alpha_cpp(eta_zct_flat, Dc_mat, a2_z, b2_z, mz0_vec, Sz0_mat, n_topic, n_time, n_cust, p_dim));
+    return rcpp_result_gen;
+END_RCPP
+}
 // sample_beta_cpp
 NumericVector sample_beta_cpp(NumericVector u_cit, NumericMatrix x_it_matrix, IntegerVector z_cit, IntegerVector item_idx, IntegerVector time_idx, NumericMatrix mu_beta_zi, NumericVector V_inv_zi, int n_topic, int n_item, int n_var);
 RcppExport SEXP _MRDLTM_sample_beta_cpp(SEXP u_citSEXP, SEXP x_it_matrixSEXP, SEXP z_citSEXP, SEXP item_idxSEXP, SEXP time_idxSEXP, SEXP mu_beta_ziSEXP, SEXP V_inv_ziSEXP, SEXP n_topicSEXP, SEXP n_itemSEXP, SEXP n_varSEXP) {
@@ -73,6 +93,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_MRDLTM_sample_alpha_cpp", (DL_FUNC) &_MRDLTM_sample_alpha_cpp, 10},
     {"_MRDLTM_sample_beta_cpp", (DL_FUNC) &_MRDLTM_sample_beta_cpp, 10},
     {"_MRDLTM_sample_u_cpp", (DL_FUNC) &_MRDLTM_sample_u_cpp, 9},
     {"_MRDLTM_sample_z_cpp", (DL_FUNC) &_MRDLTM_sample_z_cpp, 11},
