@@ -14,6 +14,7 @@ Imports:
     dplyr,
     MASS,
     MCMCpack,
+    pgdraw,
     Rcpp,
     stats,
     truncnorm

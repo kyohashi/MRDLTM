@@ -9,12 +9,12 @@ mrdltm_mcmc(model, iter = 2000, burnin = 1000)
 \arguments{
 \item{model}{An object of class "mrdltm_model".}
 
-\item{iter}{Total mcmc iterations}
+\item{iter}{Total MCMC iterations.}
 
-\item{burnin}{Burn-in iterations}
+\item{burnin}{Burn-in iterations.}
 }
 \value{
-A list containing the mcmc samples
+A list of class "mrdltm_mcmc" containing the MCMC samples.
 }
 \description{
 Run the Gibbs sampler using a pre-defined mrdltm_model object.

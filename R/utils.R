@@ -62,7 +62,7 @@ init_state = function(active_data, n_item, n_cust, n_topic, length_time, n_var, 
 #' 1. The item i belongs to Ic (items purchased by customer c at least once).
 #' 2. The time t belongs to Tc (time points where customer c made at least one purchase).
 #'
-#' @param data A data frame containing 'cust', 'item', 'time', and 'y_cit'.
+#' @param data A data frame containing (cust, item, time, y_cit)
 #'
 #' @return A filtered data frame of active observations.
 #' @importFrom dplyr group_by filter mutate ungroup select semi_join
