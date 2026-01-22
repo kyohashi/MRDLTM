@@ -5,15 +5,15 @@
 #'
 #' @param state An environment containing the current MCMC state.
 #' @param priors A list of hyperparameters from the model object.
+#' @param n_item Number of items (I)
+#' @param n_topic Number of latent topics (Z)
+#' @param n_var Number of marketing covariates including intercept (M)
 #'
 #' @return NULL
 #' @importFrom MASS mvrnorm
 #' @importFrom MCMCpack riwish
 #' @noRd
-sample_mu_V = function(state, priors) {
-  n_topic = dim(state$beta_zi)[1]
-  n_item  = dim(state$beta_zi)[2]
-  n_var   = dim(state$beta_zi)[3]
+sample_mu_V = function(state, priors, n_item, n_topic, n_var) {
 
   # --- Hyperparameters ---
   mu_tilde = if (!is.null(priors$mu_tilde)) priors$mu_tilde else rep(0, n_var)

@@ -19,7 +19,7 @@ test_that("sample_mu_V runs without error", {
 
   # --- Execution & Basic Check ---
   # Check if the function completes without error
-  expect_error(sample_mu_V(state, priors), NA)
+  expect_error(sample_mu_V(state, priors, n_item, n_topic, n_var), NA)
 
   # Check if values are updated from initial zeros (mu_i) or identity (V_i)
   expect_true(is.numeric(state$mu_i))

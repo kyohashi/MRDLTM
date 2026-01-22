@@ -3,17 +3,17 @@
 #' @description
 #' Sample the topic-item specific response coefficients beta_zi
 #'
-#' @param active_data A data frame of active observations (c, i, t)
+#' @param active_data A data frame of active observations (cust, item, time)
 #' @param state An environment containing the current MCMC state
 #' @param x_it An array of marketing covariates
+#' @param n_item Number of items (I)
+#' @param n_topic Number of latent topics (Z)
+#' @param n_var Number of marketing covariates including intercept (M)
 #'
 #' @return NULL
 #' @importFrom MASS mvrnorm
 #' @noRd
-sample_beta = function(active_data, state, x_it){
-  n_topic = dim(state$beta_zi)[1]
-  n_item = dim(state$beta_zi)[2]
-  n_var = dim(state$beta_zi)[3]
+sample_beta = function(active_data, state, x_it, n_item, n_topic, n_var){
 
   # Loop through (z, i) combination
   for (z in 1:n_topic){

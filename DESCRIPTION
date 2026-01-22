@@ -15,6 +15,7 @@ Imports:
     MASS,
     MCMCpack,
     Rcpp,
+    stats,
     truncnorm
 Suggests: 
     testthat (>= 3.0.0)
