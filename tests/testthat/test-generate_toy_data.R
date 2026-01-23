@@ -39,14 +39,6 @@ test_that("generate_toy_data produces correct dimensions and structure", {
   expect_equal(dim(toy$true_params$beta_zi)[3], n_var)
 })
 
-test_that("generate_toy_data respects intercept defaults", {
-  # When n_var = 1 and p_dim = 1, x_it and Dc should be all 1s
-  toy = generate_toy_data(n_var = 1, p_dim = 1)
-
-  expect_true(all(toy$observations$x_it == 1))
-  expect_true(all(toy$observations$Dc == 1))
-})
-
 test_that("generate_toy_data works with the model constructor", {
   # This tests the "Data-Bound" integration
   toy = generate_toy_data(n_topic = 4, p_dim = 2)

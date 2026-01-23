@@ -94,6 +94,31 @@ filter_active_data = function(data) {
   return(active_data)
 }
 
+#' Helper to compute log-likelihood for the current state
+#' @noRd
+compute_log_likelihood = function(active_data, state, x_it) {
+  # Extract dimensions from the state/data
+  n_topic = dim(state$beta_zi)[1]
+  n_item  = dim(state$beta_zi)[2]
+  n_var   = dim(state$beta_zi)[3]
+  n_time  = dim(x_it)[2]
+
+  log_lik = compute_log_likelihood_cpp(
+    z_cit        = as.integer(state$z_cit),
+    item_idx     = as.integer(active_data$item),
+    time_idx     = as.integer(active_data$time),
+    y_cit        = as.integer(active_data$y_cit),
+    beta_zi_flat = as.numeric(state$beta_zi),
+    x_it_flat    = as.numeric(x_it),
+    n_topic      = n_topic,
+    n_item       = n_item,
+    n_time       = n_time,
+    n_var        = n_var
+  )
+
+  return(log_lik)
+}
+
 #' Convert MCMC samples to array for bayesplot
 #'
 #' @param x An object of class "mrdltm_mcmc".

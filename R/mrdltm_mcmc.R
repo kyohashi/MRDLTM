@@ -15,7 +15,7 @@ mrdltm_mcmc = function(model, iter = 2000, burnin = 1000) {
   obs = model$observations
   priors = model$priors
 
-  ## Filter for active observations
+  ## Filter for active observations (C x I x T) -> (C_t x I_c x T_c)
   active_data = filter_active_data(obs$data)
 
   ## Get dimensions
@@ -41,10 +41,12 @@ mrdltm_mcmc = function(model, iter = 2000, burnin = 1000) {
   # --- 3. Pre-allocate history ---
   # We store all iterations to allow users to inspect burn-in if needed.
   history = list(
-    beta   = array(0, dim = c(iter, n_topic, n_item, n_var)),
+    beta_zi   = array(0, dim = c(iter, n_topic, n_item, n_var)),
     mu_i   = array(0, dim = c(iter, n_item, n_var)),
     V_i    = array(0, dim = c(iter, n_item, n_var, n_var)),
-    alpha  = array(0, dim = c(iter, n_topic - 1, length_time, p_dim)),
+    alpha_zt  = array(0, dim = c(iter, n_topic - 1, length_time, p_dim)),
+    eta_zct   = array(0, dim = c(iter, n_topic - 1, n_cust, length_time)),
+    z_cit     = array(0, dim = c(iter, n_cust, n_item, length_time)),
     a2_z   = matrix(0, nrow = iter, ncol = n_topic - 1),
     b2_z   = matrix(0, nrow = iter, ncol = n_topic - 1),
     log_lik = numeric(iter)
@@ -97,10 +99,12 @@ mrdltm_mcmc = function(model, iter = 2000, burnin = 1000) {
     t_vars <- t_vars + (proc.time() - t)[3]
 
     # --- 5. Record MCMC Samples ---
-    history$beta[m, , , ]  = state$beta_zi
+    history$beta_zi[m, , , ]  = state$beta_zi
     history$mu_i[m, , ]    = state$mu_i
     history$V_i[m, , , ]   = state$V_i
-    history$alpha[m, , , ] = state$alpha_zt
+    history$alpha_zt[m, , , ] = state$alpha_zt
+    history$eta_zct[m, , , ]   = state$eta_zct
+    history$z_cit[m, , , ]   = state$z_cit
     history$a2_z[m, ]      = state$a2_z
     history$b2_z[m, ]      = state$b2_z
 
@@ -122,29 +126,4 @@ mrdltm_mcmc = function(model, iter = 2000, burnin = 1000) {
   class(history) = "mrdltm_mcmc"
 
   return(history)
-}
-
-#' Helper to compute log-likelihood for the current state
-#' @noRd
-compute_log_likelihood = function(active_data, state, x_it) {
-  # Extract dimensions from the state/data
-  n_topic = dim(state$beta_zi)[1]
-  n_item  = dim(state$beta_zi)[2]
-  n_var   = dim(state$beta_zi)[3]
-  n_time  = dim(x_it)[2]
-
-  log_lik = compute_log_likelihood_cpp(
-    z_cit        = as.integer(state$z_cit),
-    item_idx     = as.integer(active_data$item),
-    time_idx     = as.integer(active_data$time),
-    y_cit        = as.integer(active_data$y_cit),
-    beta_zi_flat = as.numeric(state$beta_zi),
-    x_it_flat    = as.numeric(x_it),
-    n_topic      = n_topic,
-    n_item       = n_item,
-    n_time       = n_time,
-    n_var        = n_var
-  )
-
-  return(log_lik)
 }
