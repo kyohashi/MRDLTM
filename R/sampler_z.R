@@ -27,7 +27,7 @@ sample_z = function(active_data, state, x_it, n_item, n_topic, n_cust, n_var) {
   rand_u = stats::runif(n_obs)
 
   state$z_cit = sample_z_cpp(
-    u_cit        = state$u_cit,
+    y_cit        = active_data$y_cit,
     eta_flat     = as.numeric(state$eta_zct),
     beta_flat    = as.numeric(beta_prep),
     x_flat       = as.numeric(x_prep),

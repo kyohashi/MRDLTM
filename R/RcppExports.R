@@ -29,8 +29,8 @@ sample_u_cpp <- function(y_cit, x_it_matrix, beta_zi_flat, z_cit, item_idx, time
     .Call(`_MRDLTM_sample_u_cpp`, y_cit, x_it_matrix, beta_zi_flat, z_cit, item_idx, time_idx, n_topic, n_item, n_var)
 }
 
-sample_z_cpp <- function(u_cit, eta_flat, beta_flat, x_flat, cust_idx, item_idx, time_idx, rand_u, n_topic, n_item, n_time, n_cust, n_var) {
-    .Call(`_MRDLTM_sample_z_cpp`, u_cit, eta_flat, beta_flat, x_flat, cust_idx, item_idx, time_idx, rand_u, n_topic, n_item, n_time, n_cust, n_var)
+sample_z_cpp <- function(y_cit, eta_flat, beta_flat, x_flat, cust_idx, item_idx, time_idx, rand_u, n_topic, n_item, n_time, n_cust, n_var) {
+    .Call(`_MRDLTM_sample_z_cpp`, y_cit, eta_flat, beta_flat, x_flat, cust_idx, item_idx, time_idx, rand_u, n_topic, n_item, n_time, n_cust, n_var)
 }
 
 compute_log_likelihood_cpp <- function(z_cit, item_idx, time_idx, y_cit, beta_zi_flat, x_it_flat, n_topic, n_item, n_time, n_var) {

@@ -152,12 +152,12 @@ BEGIN_RCPP
 END_RCPP
 }
 // sample_z_cpp
-IntegerVector sample_z_cpp(NumericVector u_cit, NumericVector eta_flat, NumericVector beta_flat, NumericVector x_flat, IntegerVector cust_idx, IntegerVector item_idx, IntegerVector time_idx, NumericVector rand_u, int n_topic, int n_item, int n_time, int n_cust, int n_var);
-RcppExport SEXP _MRDLTM_sample_z_cpp(SEXP u_citSEXP, SEXP eta_flatSEXP, SEXP beta_flatSEXP, SEXP x_flatSEXP, SEXP cust_idxSEXP, SEXP item_idxSEXP, SEXP time_idxSEXP, SEXP rand_uSEXP, SEXP n_topicSEXP, SEXP n_itemSEXP, SEXP n_timeSEXP, SEXP n_custSEXP, SEXP n_varSEXP) {
+IntegerVector sample_z_cpp(IntegerVector y_cit, NumericVector eta_flat, NumericVector beta_flat, NumericVector x_flat, IntegerVector cust_idx, IntegerVector item_idx, IntegerVector time_idx, NumericVector rand_u, int n_topic, int n_item, int n_time, int n_cust, int n_var);
+RcppExport SEXP _MRDLTM_sample_z_cpp(SEXP y_citSEXP, SEXP eta_flatSEXP, SEXP beta_flatSEXP, SEXP x_flatSEXP, SEXP cust_idxSEXP, SEXP item_idxSEXP, SEXP time_idxSEXP, SEXP rand_uSEXP, SEXP n_topicSEXP, SEXP n_itemSEXP, SEXP n_timeSEXP, SEXP n_custSEXP, SEXP n_varSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector >::type u_cit(u_citSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type y_cit(y_citSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type eta_flat(eta_flatSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type beta_flat(beta_flatSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type x_flat(x_flatSEXP);
@@ -170,7 +170,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type n_time(n_timeSEXP);
     Rcpp::traits::input_parameter< int >::type n_cust(n_custSEXP);
     Rcpp::traits::input_parameter< int >::type n_var(n_varSEXP);
-    rcpp_result_gen = Rcpp::wrap(sample_z_cpp(u_cit, eta_flat, beta_flat, x_flat, cust_idx, item_idx, time_idx, rand_u, n_topic, n_item, n_time, n_cust, n_var));
+    rcpp_result_gen = Rcpp::wrap(sample_z_cpp(y_cit, eta_flat, beta_flat, x_flat, cust_idx, item_idx, time_idx, rand_u, n_topic, n_item, n_time, n_cust, n_var));
     return rcpp_result_gen;
 END_RCPP
 }
