@@ -4,7 +4,7 @@
 \alias{mrdltm_mcmc}
 \title{Gibbs Sampler for MR-DLTM}
 \usage{
-mrdltm_mcmc(model, iter = 2000, burnin = 1000)
+mrdltm_mcmc(model, iter = 2000, burnin = 1000, quiet = TRUE)
 }
 \arguments{
 \item{model}{An object of class "mrdltm_model".}
@@ -12,6 +12,8 @@ mrdltm_mcmc(model, iter = 2000, burnin = 1000)
 \item{iter}{Total MCMC iterations.}
 
 \item{burnin}{Burn-in iterations.}
+
+\item{quiet}{A flag to show a progress-bar}
 }
 \value{
 A list of class "mrdltm_mcmc" containing the MCMC samples.

@@ -6,10 +6,11 @@
 #' @param model An object of class "mrdltm_model".
 #' @param iter Total MCMC iterations.
 #' @param burnin Burn-in iterations.
+#' @param quiet A flag to show a progress-bar
 #'
 #' @return A list of class "mrdltm_mcmc" containing the MCMC samples.
 #' @export
-mrdltm_mcmc = function(model, iter = 2000, burnin = 1000) {
+mrdltm_mcmc = function(model, iter = 2000, burnin = 1000, quiet = TRUE) {
 
   # --- 1. Preparation ---
   obs = model$observations
@@ -115,7 +116,7 @@ mrdltm_mcmc = function(model, iter = 2000, burnin = 1000) {
     t_lik = t_lik + (proc.time() - t)[3]
 
     # Progress message
-    if (m %% 100 == 0) {
+    if (!quiet & m %% 100 == 0) {
       status = ifelse(m <= burnin, "(Burn-in)", "(Sampling)")
       message(sprintf("Iteration %d / %d %s", m, iter, status))
       message(sprintf("\nIter %d times - \n Z: %.3fs \n U: %.3fs \n Beta: %.3fs \n muV: %.3fs \n Eta: %.3fs \n Alpha: %.3fs \n Vars: %.3fs \n Lik: %.3fs", m, t_z, t_u, t_beta, t_muV, t_eta, t_alpha, t_vars, t_lik))
