@@ -17,7 +17,7 @@
 #' @noRd
 sample_eta = function(active_data, state, Dc, n_cust, n_topic, length_time, p_dim) {
 
-  # Step 1: Prepare parameters for PG sampling in C++ (fast)
+  # Step 1: Prepare Softmax-based PG parameters
   prep = sample_eta_prepare_cpp(
     z_cit_flat   = as.integer(state$z_cit),
     obs_cust     = as.integer(active_data$cust),
@@ -28,22 +28,23 @@ sample_eta = function(active_data, state, Dc, n_cust, n_topic, length_time, p_di
     n_cust       = n_cust
   )
 
-  # Step 2: Sample Polya-Gamma variables as a single vector
+  # Step 2: Vectorized PG sampling
   omega_vec = rep(0, length(prep$b_vec))
-  active_idx = which(prep$needs_pg)
+  active_idx = which(prep$needs_pg) # Now prep$needs_pg exists
   if(length(active_idx) > 0) {
-    # Call vectorized pgdraw to avoid R-C++ overhead inside loops
-    omega_vec[active_idx] = pgdraw(prep$b_vec[active_idx], prep$z_vec[active_idx])
+    omega_vec[active_idx] = pgdraw::pgdraw(prep$b_vec[active_idx], prep$z_vec[active_idx])
   }
 
-  # Step 3: Update posterior mean/variance in C++ (parallelized)
+  # Step 3: Update eta
   state$eta_zct = sample_eta_update_cpp(
     eta_zct_flat  = as.numeric(state$eta_zct),
     omega_vec     = omega_vec,
-    counts_flat   = as.numeric(prep$counts),
+    log_C_vec     = prep$log_C_vec,
+    n_kct_vec     = prep$n_kct_vec,
+    N_ct_vec      = prep$N_ct_vec,
     alpha_zt_flat = as.numeric(state$alpha_zt),
     Dc_mat        = as.matrix(Dc),
-    b2_z          = as.numeric(state$b2_z),
+    a2_z          = as.numeric(state$a2_z),
     n_topic       = n_topic,
     n_time        = length_time,
     n_cust        = n_cust,
