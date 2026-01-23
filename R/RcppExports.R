@@ -17,8 +17,8 @@ sample_eta_prepare_cpp <- function(z_cit_flat, obs_cust, obs_time, eta_zct_flat,
     .Call(`_MRDLTM_sample_eta_prepare_cpp`, z_cit_flat, obs_cust, obs_time, eta_zct_flat, n_topic, n_time, n_cust)
 }
 
-sample_eta_update_cpp <- function(eta_zct_flat, omega_vec, counts_flat, alpha_zt_flat, Dc_mat, b2_z, n_topic, n_time, n_cust, p_dim) {
-    .Call(`_MRDLTM_sample_eta_update_cpp`, eta_zct_flat, omega_vec, counts_flat, alpha_zt_flat, Dc_mat, b2_z, n_topic, n_time, n_cust, p_dim)
+sample_eta_update_cpp <- function(eta_zct_flat, omega_vec, log_C_vec, n_kct_vec, N_ct_vec, alpha_zt_flat, Dc_mat, a2_z, n_topic, n_time, n_cust, p_dim) {
+    .Call(`_MRDLTM_sample_eta_update_cpp`, eta_zct_flat, omega_vec, log_C_vec, n_kct_vec, N_ct_vec, alpha_zt_flat, Dc_mat, a2_z, n_topic, n_time, n_cust, p_dim)
 }
 
 sample_mu_V_cpp <- function(beta_zi_flat, mu_i_mat, V_i_flat, mu_tilde, sigma_tilde_mu, w_tilde, W_tilde, n_topic, n_item, n_var) {

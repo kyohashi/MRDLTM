@@ -20,10 +20,10 @@
 generate_toy_data = function(n_cust = 10, n_item = 50, n_topic = 3, length_time = 30, n_var = 2, p_dim = 1) {
   # --- 1. Generate Marketing Covariates (x_it) ---
   # x_it: [item, time, n_var]
-  x_it = array(1, dim = c(n_item, length_time, n_var))
-  if (n_var > 1) {
-    x_it[, , 2:n_var] = rnorm(n_item * length_time * (n_var - 1))
-  }
+  x_it = array(rnorm(n_item*length_time*n_var), dim = c(n_item, length_time, n_var))
+  # if (n_var > 1) {
+  #   x_it[, , 2:n_var] = rnorm(n_item * length_time * (n_var - 1))
+  # }
 
   # --- 2. Generate Customer Covariates (Dc) ---
   # Dc: [n_cust, p_dim]
@@ -34,8 +34,8 @@ generate_toy_data = function(n_cust = 10, n_item = 50, n_topic = 3, length_time 
 
   # --- 3. Generate Response Coefficients (beta_zi) ---
   # beta_zi ~ N(mu_i, V_i)
-  mu_i = matrix(rnorm(n_item * n_var, mean = 0, sd = 0.5), nrow = n_item, ncol = n_var)
-  V_i = 3.0 # set relatively large variance for identifiability
+  mu_i = matrix(0, nrow = n_item, ncol = n_var)
+  V_i = 1.0 # set relatively large variance for identifiability
   beta_zi = array(0, dim = c(n_topic, n_item, n_var))
   for (z in 1:n_topic) {
     for (i in 1:n_item) {
@@ -46,8 +46,8 @@ generate_toy_data = function(n_cust = 10, n_item = 50, n_topic = 3, length_time 
   # --- 4. Generate Dynamic Topic Occupancy (DLM) ---
   # We generate Z-1 processes for identifiability (the Z-th topic is the baseline)
   n_z_dlm = n_topic - 1
-  a2_z = rep(0.01, n_z_dlm) # Observation variance
-  b2_z = rep(0.05, n_z_dlm) # System variance
+  a2_z = rep(0.05, n_z_dlm) # Observation variance
+  b2_z = rep(0.01, n_z_dlm) # System variance
 
   # alpha_zt: [Z-1, T, p_dim]
   alpha_zt = array(0, dim = c(n_z_dlm, length_time, p_dim))
