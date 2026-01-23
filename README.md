@@ -39,10 +39,10 @@ set.seed(42)
 
 # Generate synthetic observations and true parameters
 toy = generate_toy_data(
-  n_cust = 30, 
+  n_cust = 100, 
   n_item = 5, 
-  n_topic = 3,
-  length_time = 24, 
+  n_topic = 2,
+  length_time = 52, 
   n_var = 2, 
   p_dim = 1
 )
@@ -54,28 +54,18 @@ Initialize the model specification and run the Gibbs sampler.
 
 ``` r
 # Define model
-model = mrdltm_model(observations = toy$observations, n_topic = 3)
+model = mrdltm_model(observations = toy$observations, n_topic = 2)
 
 # Run MCMC
-iter = 1000
-burnin = 500
+iter = 5000
+burnin = 3000
 timer = system.time({
-  res = mrdltm_mcmc(model = model, iter = iter, burnin = burnin)
+  res = mrdltm_mcmc(model = model, iter = iter, burnin = burnin, quiet = TRUE)
 })
-#> Starting Gibbs Sampling: 1000 iterations (burn-in: 500)
-#> Iteration 100 / 1000 (Burn-in)
-#> Iteration 200 / 1000 (Burn-in)
-#> Iteration 300 / 1000 (Burn-in)
-#> Iteration 400 / 1000 (Burn-in)
-#> Iteration 500 / 1000 (Burn-in)
-#> Iteration 600 / 1000 (Sampling)
-#> Iteration 700 / 1000 (Sampling)
-#> Iteration 800 / 1000 (Sampling)
-#> Iteration 900 / 1000 (Sampling)
-#> Iteration 1000 / 1000 (Sampling)
+#> Starting Gibbs Sampling: 5000 iterations (burn-in: 3000)
 
 cat(sprintf("Total Elapsed Time: %.2f minutes\n", timer["elapsed"] / 60))
-#> Total Elapsed Time: 0.63 minutes
+#> Total Elapsed Time: 0.53 minutes
 ```
 
 ### 3. Diagnostics and Recovery
@@ -94,54 +84,48 @@ mcmc_trace(log_lik_all) +
 <img src="man/figures/README-unnamed-chunk-5-1.png" alt="" width="100%" />
 
 ``` r
-# Parameter Recovery and Label Switching Diagnostics
+# --- Parameter Recovery Visualization (Beta) ---
+library(tidyverse)
 
-# 1. Extract post-burnin samples
-beta_post <- extract_samples(res, "beta", burnin = 0)
-post_means <- colMeans(beta_post[, 1, ])
+# 1. Extract post-burnin samples [Iteration, Topic, Item, Variable]
+beta_samples = res$beta[(burnin + 1):iter, , , ]
+d = dim(beta_samples)
 
-# 2. Identify the best mapping between Estimated Topics and True Topics
-# This logic finds which True Topic best matches each Estimated Topic (MSE based)
-n_z <- model$n_topic
-mapping <- sapply(1:n_z, function(z_est) {
-  mses <- sapply(1:n_z, function(z_true) {
-    # Extract estimated values for this topic
-    est_vals <- post_means[grep(sprintf("beta[z%d,", z_est), names(post_means), fixed = TRUE)]
-    # Extract corresponding true values from toy object
-    true_vals <- as.vector(toy$true_params$beta_zi[z_true, , ])
-    mean((est_vals - true_vals)^2)
+# 2. Process Posterior Traces and Ground Truth
+plot_data = map_dfr(1:d[4], function(v) {
+  map_dfr(1:d[3], function(i) {
+    # Prepare sorted traces
+    traces_raw = as.data.frame(t(apply(beta_samples[, , i, v], 1, sort)))
+    topic_names = colnames(traces_raw) # V1, V2...
+    
+    traces = traces_raw |>
+      mutate(Iteration = row_number(), 
+             Item_Idx = paste("Item", i), 
+             Var_Idx = paste("Var", v)) |>
+      pivot_longer(cols = all_of(topic_names), names_to = "Topic", values_to = "Value")
+    
+    # Prepare ground truth
+    truths = data.frame(
+      Topic = topic_names, 
+      TrueValue = sort(toy$true_params$beta_zi[, i, v]),
+      Item_Idx = paste("Item", i), 
+      Var_Idx = paste("Var", v)
+    )
+    
+    left_join(traces, truths, by = c("Topic", "Item_Idx", "Var_Idx"))
   })
-  which.min(mses)
 })
 
-# 3. Align True Values to the Estimated Parameter Labels
-# Create a named vector of true values for bayesplot functions
-true_beta_vec <- sapply(names(post_means), function(name) {
-  # Parse indices: z (topic), i (item), v (variable)
-  idx <- as.numeric(unlist(regmatches(name, gregexpr("[0-9]+", name))))
-  # Map estimated topic index to true topic index
-  toy$true_params$beta_zi[mapping[idx[1]], idx[2], idx[3]]
-})
-
-# 4. Plot Trace Plots with True Values (Red Dashed Lines)
-# This confirms if the chains converged to the correct ground truth
-mcmc_trace(beta_post, pars = vars(contains("i1"))) +
-  geom_hline(data = data.frame(
-               parameter = names(true_beta_vec[grepl("i1", names(true_beta_vec))]),
-               true_val = true_beta_vec[grepl("i1", names(true_beta_vec))]
-             ),
-             aes(yintercept = true_val), color = "red", linetype = "dashed") +
-  ggtitle("Trace Plots for Beta (Item 1) with True Values")
+# 3. Grid Visualization
+ggplot(plot_data, aes(x = Iteration, y = Value, color = Topic)) +
+  geom_line(alpha = 0.5, linewidth = 0.2) +
+  geom_hline(aes(yintercept = TrueValue, color = Topic), linetype = "dashed", alpha = 0.8) +
+  facet_grid(Var_Idx ~ Item_Idx, scales = "free_y") +
+  labs(title = "MR-DLTM: Beta Parameter Recovery",
+       subtitle = "Solid lines: Sorted MCMC traces | Dashed lines: Ground truth",
+       x = "Iteration (Post-Burnin)", y = "Coefficient Value") +
+  theme_minimal() +
+  theme(legend.position = "none", strip.background = element_rect(fill = "gray95"))
 ```
 
 <img src="man/figures/README-unnamed-chunk-6-1.png" alt="" width="100%" />
-
-``` r
-
-# 5. Plot Posterior Intervals with True Values (Red Points)
-# Using 'true' argument to automatically overlay ground truth
-mcmc_intervals(beta_post, pars = vars(contains("i1")), prob = 0.95) +
-  ggtitle("Posterior 95% Intervals for Beta (Item 1) with True Values")
-```
-
-<img src="man/figures/README-unnamed-chunk-6-2.png" alt="" width="100%" />
