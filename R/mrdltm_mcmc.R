@@ -46,7 +46,7 @@ mrdltm_mcmc = function(model, iter = 2000, burnin = 1000) {
     V_i    = array(0, dim = c(iter, n_item, n_var, n_var)),
     alpha_zt  = array(0, dim = c(iter, n_topic - 1, length_time, p_dim)),
     eta_zct   = array(0, dim = c(iter, n_topic - 1, n_cust, length_time)),
-    z_cit     = array(0, dim = c(iter, n_cust, n_item, length_time)),
+    z_cit     = array(0, dim = c(iter, n_obs)),
     a2_z   = matrix(0, nrow = iter, ncol = n_topic - 1),
     b2_z   = matrix(0, nrow = iter, ncol = n_topic - 1),
     log_lik = numeric(iter)
@@ -104,7 +104,7 @@ mrdltm_mcmc = function(model, iter = 2000, burnin = 1000) {
     history$V_i[m, , , ]   = state$V_i
     history$alpha_zt[m, , , ] = state$alpha_zt
     history$eta_zct[m, , , ]   = state$eta_zct
-    history$z_cit[m, , , ]   = state$z_cit
+    history$z_cit[m, ]   = state$z_cit
     history$a2_z[m, ]      = state$a2_z
     history$b2_z[m, ]      = state$b2_z
 
