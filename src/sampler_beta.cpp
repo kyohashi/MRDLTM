@@ -23,18 +23,25 @@ NumericVector sample_beta_cpp(
     int n_var
 ) {
   int n_obs = z_cit.size();
-
-  // x_it is [I, T, M] in R, so map to cube(I, T, M)
   cube x_it(x_it_flat.begin(), n_item, n_time, n_var, false);
   mat mu_i(mu_i_mat.begin(), n_item, n_var, false);
-  // V_i is [M, M, I] after aperm in R
   cube V_i(V_i_flat.begin(), n_var, n_var, n_item, false);
 
-  // Storage for sufficient statistics XX (M x M) and Xu (M x 1)
+  // 1. Aggregation Step (O(N)): Collect scalars first (Fast)
+  // Use a flat vector to store sums of u and counts to avoid field<> overhead
+  arma::cube sum_u(n_topic, n_item, n_time, fill::zeros);
+  arma::cube counts(n_topic, n_item, n_time, fill::zeros);
+
+  for (int n = 0; n < n_obs; ++n) {
+    sum_u(z_cit[n]-1, item_idx[n]-1, time_idx[n]-1) += u_cit[n];
+    counts(z_cit[n]-1, item_idx[n]-1, time_idx[n]-1) += 1.0;
+  }
+
+  // 2. Statistics Step (O(K*I*T)): Matrix operations on aggregated data
   field<mat> XX(n_topic, n_item);
   field<vec> Xu(n_topic, n_item);
 
-  // Initialize using hierarchical priors
+  // Initialize with Priors
   for(int k = 0; k < n_topic; ++k) {
     for(int i = 0; i < n_item; ++i) {
       mat V_inv = inv_sympd(V_i.slice(i));
@@ -43,34 +50,29 @@ NumericVector sample_beta_cpp(
     }
   }
 
-  // O(N) Step: Single pass over observations
-  for (int n = 0; n < n_obs; ++n) {
-    int k = z_cit[n] - 1;
-    int i = item_idx[n] - 1;
-    int t = time_idx[n] - 1;
+  // Heavy matrix math happens here, but only K*I*T times (much less than N)
+  for (int i = 0; i < n_item; ++i) {
+    for (int t = 0; t < n_time; ++t) {
+      vec x_n = vectorise(x_it.tube(i, t));
+      mat x_outer = x_n * x_n.t(); // Compute outer product only once per (i, t)
 
-    // Extract covariate vector of length M for specific (i, t)
-    // tube(i, t) returns all elements along the 3rd dimension
-    vec x_n = vectorise(x_it.tube(i, t));
-
-    XX(k, i) += x_n * x_n.t();
-    Xu(k, i) += x_n * u_cit[n];
+      for (int k = 0; k < n_topic; ++k) {
+        if (counts(k, i, t) > 0) {
+          XX(k, i) += counts(k, i, t) * x_outer;
+          Xu(k, i) += x_n * sum_u(k, i, t);
+        }
+      }
+    }
   }
 
-  // Result cube: [n_topic, n_item, n_var] to match R's array(Z, I, M)
+  // 3. Sampling Step: Parallel as before
   cube beta_out(n_topic, n_item, n_var);
-
 #pragma omp parallel for collapse(2)
   for (int i = 0; i < n_item; ++i) {
     for (int k = 0; k < n_topic; ++k) {
       mat Post_Cov = inv_sympd(XX(k, i));
-      vec Post_Mean = Post_Cov * Xu(k, i);
-
-      vec eps = randn<vec>(n_var);
-      // Store as tube (length M) at (k, i) to preserve memory layout
-      beta_out.tube(k, i) = Post_Mean + chol(Post_Cov, "lower") * eps;
+      beta_out.tube(k, i) = Post_Cov * Xu(k, i) + chol(Post_Cov, "lower") * randn<vec>(n_var);
     }
   }
-
   return wrap(beta_out);
 }
