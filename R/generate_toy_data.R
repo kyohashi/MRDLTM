@@ -20,10 +20,10 @@
 generate_toy_data = function(n_cust = 10, n_item = 50, n_topic = 3, length_time = 30, n_var = 2, p_dim = 1) {
   # --- 1. Generate Marketing Covariates (x_it) ---
   # x_it: [item, time, n_var]
-  x_it = array(rnorm(n_item*length_time*n_var), dim = c(n_item, length_time, n_var))
-  # if (n_var > 1) {
-  #   x_it[, , 2:n_var] = rnorm(n_item * length_time * (n_var - 1))
-  # }
+  x_it = array(1, dim = c(n_item, length_time, n_var))
+  if (n_var > 1) {
+    x_it[, , 2:n_var] = rnorm(n_item * length_time * (n_var - 1))
+  }
 
   # --- 2. Generate Customer Covariates (Dc) ---
   # Dc: [n_cust, p_dim]
