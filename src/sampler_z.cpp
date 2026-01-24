@@ -11,14 +11,14 @@ using namespace arma;
 
 // [[Rcpp::export]]
 IntegerVector sample_z_cpp(
-    IntegerVector y_cit,
-    NumericVector eta_flat,
-    NumericVector beta_flat,
-    NumericVector x_flat,
+    IntegerVector y_cit,      // Observed binary outcomes (0/1)
+    NumericVector eta_flat,   // Topic prevalence [Z-1, C, T]
+    NumericVector beta_flat,  // Item coefficients [Z, M, I]
+    NumericVector x_flat,     // Marketing variables [M, T, I]
     IntegerVector cust_idx,
     IntegerVector item_idx,
     IntegerVector time_idx,
-    NumericVector rand_u,
+    NumericVector rand_u,     // Pre-generated uniforms for sampling
     int n_topic, int n_item, int n_time, int n_cust, int n_var
 ) {
   int N = y_cit.size();
@@ -29,16 +29,26 @@ IntegerVector sample_z_cpp(
   cube beta_cube(beta_flat.begin(), n_topic, n_var, n_item, false);
   cube x_cube(x_flat.begin(), n_var, n_time, n_item, false);
 
-  // Step 1: Precompute XB lookup table [Z x T x I]
-  cube xb_table(n_topic, n_time, n_item);
+  // Step 1: Precompute Log-Likelihood tables [Z x T x I]
+  // Precomputing both log(Phi(xb)) and log(1 - Phi(xb)) to avoid R::pnorm in the main loop
+  cube log_phi_y1(n_topic, n_time, n_item);
+  cube log_phi_y0(n_topic, n_time, n_item);
+
 #pragma omp parallel for collapse(2)
   for (int i = 0; i < n_item; ++i) {
     for (int t = 0; t < n_time; ++t) {
-      xb_table.slice(i).col(t) = beta_cube.slice(i) * x_cube.slice(i).col(t);
+      // Calculate linear predictor xb for each topic z
+      vec xb_vec = beta_cube.slice(i) * x_cube.slice(i).col(t);
+      for (int z = 0; z < n_topic; ++z) {
+        double xb = xb_vec[z];
+        // y=1: log(Phi(xb)), y=0: log(1-Phi(xb))
+        log_phi_y1(z, t, i) = R::pnorm(xb, 0.0, 1.0, 1, 1);
+        log_phi_y0(z, t, i) = R::pnorm(xb, 0.0, 1.0, 0, 1);
+      }
     }
   }
 
-  // Step 2: Sampling loop
+  // Step 2: Main Sampling loop
 #pragma omp parallel
 {
   vec log_probs(n_topic);
@@ -53,17 +63,11 @@ IntegerVector sample_z_cpp(
 
     for (int z = 0; z < n_topic; ++z) {
       // --- Log-Prior ---
-      // Baseline normalization constant is omitted as it cancels out during sampling.
       double log_pi_z = (z < n_topic - 1) ? eta_cube(z, c, t) : 0.0;
 
-      // --- Log-Likelihood (Probit) ---
-      double xb = xb_table(z, t, i);
-      double log_omega;
-      if (y == 1) {
-        log_omega = R::pnorm(xb, 0.0, 1.0, 1, 1); // log(Phi(xb))
-      } else {
-        log_omega = R::pnorm(xb, 0.0, 1.0, 0, 1); // log(1 - Phi(xb))
-      }
+      // --- Log-Likelihood (Lookup from precomputed tables) ---
+      // Replaced expensive R::pnorm calls with simple table lookups
+      double log_omega = (y == 1) ? log_phi_y1(z, t, i) : log_phi_y0(z, t, i);
 
       log_probs[z] = log_pi_z + log_omega;
       if (log_probs[z] > max_log_p) max_log_p = log_probs[z];
