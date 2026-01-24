@@ -45,7 +45,7 @@ List sample_eta_prepare_cpp(
       for (int k = 0; k < n_z_dlm; ++k) {
         int idx = c * (n_time * n_z_dlm) + t * n_z_dlm + k;
 
-        // C_kct = exp_sum - exp(eta_kct) (as per Eq 49)
+        // C_kct = exp_sum - exp(eta_kct)
         double C_kct = exp_sum - std::exp(eta_zct(k, c, t));
         double log_Ckct = std::log(C_kct);
 
