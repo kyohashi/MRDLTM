@@ -87,10 +87,19 @@ NumericVector sample_eta_update_cpp(
   cube alpha_zt(alpha_zt_flat.begin(), n_z_dlm, n_time, p_dim, false);
   mat Dc(Dc_mat.begin(), n_cust, p_dim, false);
 
-#pragma omp parallel for collapse(2)
-  for (int c = 0; c < n_cust; ++c) {
-    for (int t = 0; t < n_time; ++t) {
-      rowvec d_c = Dc.row(c);
+#pragma omp parallel for
+  for (int t = 0; t < n_time; ++t) {
+    // 1. Extract topic coefficients for time t as a matrix [K x P]
+    mat At(n_z_dlm, p_dim);
+    for (int k = 0; k < n_z_dlm; ++k) {
+      // Correctly convert tube subview to row
+      At.row(k) = vectorise(alpha_zt.tube(k, t)).t();
+    }
+
+    // 2. Batch compute mu_prior for ALL customers at time t
+    mat MuPriorMatrix = Dc * At.t(); // [C x P] * [P x K] = [C x K]
+
+    for (int c = 0; c < n_cust; ++c) {
       for (int k = 0; k < n_z_dlm; ++k) {
         int idx = c * (n_time * n_z_dlm) + t * n_z_dlm + k;
 
@@ -98,19 +107,18 @@ NumericVector sample_eta_update_cpp(
         double log_Ckct = log_C_vec[idx];
         double n_kct = n_kct_vec[idx];
         double N_ct = N_ct_vec[idx];
-        double var_obs = a2_z[k]; // observation variance a_k^2
+        double var_obs = a2_z[k];
 
-        // kappa_kct = n_kct - N_ct / 2
+        double mu_prior = MuPriorMatrix(c, k);
+
         double kappa = n_kct - 0.5 * N_ct;
-        double mu_prior = as_scalar(d_c * vectorise(alpha_zt.tube(k, t)));
-
-        // Equation (66) and (67)
         double V_post = 1.0 / (omega + 1.0 / var_obs);
         double m_post = V_post * (omega * log_Ckct + kappa + mu_prior / var_obs);
 
-        eta_zct(k, c, t) = m_post + std::sqrt(V_post) * R::rnorm(0, 1);
+        eta_zct(k, c, t) = m_post + std::sqrt(V_post) * arma::randn();
       }
     }
   }
+
   return wrap(eta_zct);
 }
