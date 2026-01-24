@@ -17,7 +17,7 @@ mrdltm_mcmc = function(model, iter = 2000, burnin = 1000, quiet = TRUE) {
   priors = model$priors
 
   ## Filter for active observations (C x I x T) -> (C_t x I_c x T_c)
-  active_data = obs$data#filter_active_data(obs$data)
+  active_data = filter_active_data(obs$data)
 
   ## Get dimensions
   n_obs       = nrow(active_data)
