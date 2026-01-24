@@ -17,9 +17,10 @@
 #' }
 #' @importFrom stats rnorm
 #' @export
-generate_toy_data = function(n_cust = 10, n_item = 50, n_topic = 3, length_time = 30, n_var = 2, p_dim = 1) {
+generate_toy_data = function(n_cust = 10, n_item = 50, n_topic = 3, length_time = 30, n_var = 2, p_dim = 1, purchase_prob=0.05) {
   # --- 1. Generate Marketing Covariates (x_it) ---
   # x_it: [item, time, n_var]
+  # x_it = array(rnorm(n_item*length_time*n_var), dim = c(n_item, length_time, n_var))
   x_it = array(1, dim = c(n_item, length_time, n_var))
   if (n_var > 1) {
     x_it[, , 2:n_var] = rnorm(n_item * length_time * (n_var - 1))
@@ -42,6 +43,10 @@ generate_toy_data = function(n_cust = 10, n_item = 50, n_topic = 3, length_time 
       beta_zi[z, i, ] = mu_i[i, ] + rnorm(n_var, sd = sqrt(V_i))
     }
   }
+
+  # for sparcity specification
+  intercept_shift = qnorm(purchase_prob) * sqrt(n_var + 1)
+  beta_zi[, , 1] = beta_zi[, , 1] + intercept_shift
 
   # --- 4. Generate Dynamic Topic Occupancy (DLM) ---
   # We generate Z-1 processes for identifiability (the Z-th topic is the baseline)
