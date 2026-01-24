@@ -12,6 +12,7 @@
 #' @param n_var Number of marketing covariates (M).
 #'
 #' @return NULL
+#' @importFrom stats runif
 #' @noRd
 sample_z = function(active_data, state, x_it, n_item, n_topic, n_cust, n_var) {
 

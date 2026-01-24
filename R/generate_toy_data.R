@@ -9,13 +9,14 @@
 #' @param length_time Length of time points (T)
 #' @param n_var Number of marketing covariates including intercept (M)
 #' @param p_dim Dimension of customer covariates including intercept (P)
+#' @param purchase_prob Degree of sparcity
 #'
 #' @return A list containing:
 #' \itemize{
 #'   \item observations: List of observed data (data, x_it, Dc)
 #'   \item true_params: List of ground truth parameters
 #' }
-#' @importFrom stats rnorm
+#' @importFrom stats rnorm qnorm
 #' @export
 generate_toy_data = function(n_cust = 10, n_item = 50, n_topic = 3, length_time = 30, n_var = 2, p_dim = 1, purchase_prob=0.05) {
   # --- 1. Generate Marketing Covariates (x_it) ---

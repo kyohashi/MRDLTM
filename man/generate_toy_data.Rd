@@ -10,7 +10,8 @@ generate_toy_data(
   n_topic = 3,
   length_time = 30,
   n_var = 2,
-  p_dim = 1
+  p_dim = 1,
+  purchase_prob = 0.05
 )
 }
 \arguments{
@@ -25,6 +26,8 @@ generate_toy_data(
 \item{n_var}{Number of marketing covariates including intercept (M)}
 
 \item{p_dim}{Dimension of customer covariates including intercept (P)}
+
+\item{purchase_prob}{Degree of sparcity}
 }
 \value{
 A list containing:
