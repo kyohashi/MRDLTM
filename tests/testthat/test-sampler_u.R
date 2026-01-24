@@ -9,12 +9,13 @@ test_that("sample_u correctly samples utilities", {
 
   n_topic = 2
   n_item = 1
+  n_cust = 1
   n_var = 1
 
   state = init_state(
     active_data = active_data,
     n_item = n_item,
-    n_cust = 1,
+    n_cust = n_cust,
     n_topic = n_topic,
     length_time = 2,
     n_var = n_var,
@@ -24,7 +25,7 @@ test_that("sample_u correctly samples utilities", {
   x_it <- array(c(1, 0.5), dim = c(1, 2, 2))
 
   # --- test ---
-  sample_u(active_data, state, x_it, n_item, n_topic, n_var)
+  sample_u(active_data, state, x_it, n_item, n_topic, n_cust, n_var)
   expect_true(state$u_cit[1] > 0) # y=1
   expect_true(state$u_cit[2] < 0) # y=0
 })

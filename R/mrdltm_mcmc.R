@@ -17,7 +17,7 @@ mrdltm_mcmc = function(model, iter = 2000, burnin = 1000, quiet = TRUE) {
   priors = model$priors
 
   ## Filter for active observations (C x I x T) -> (C_t x I_c x T_c)
-  active_data = filter_active_data(obs$data)
+  active_data = obs$data#filter_active_data(obs$data)
 
   ## Get dimensions
   n_obs       = nrow(active_data)
@@ -74,7 +74,7 @@ mrdltm_mcmc = function(model, iter = 2000, burnin = 1000, quiet = TRUE) {
 
     # B. Latent Utility (Probit part)
     t <- proc.time()
-    sample_u(active_data, state, obs$x_it, n_item, n_topic, n_var)
+    sample_u(active_data, state, obs$x_it, n_item, n_topic, n_cust, n_var)
     t_u <- t_u + (proc.time() - t)[3]
 
     # C. Response Coefficients (Hierarchical part)

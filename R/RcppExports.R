@@ -25,8 +25,8 @@ sample_mu_V_cpp <- function(beta_zi_flat, mu_i_mat, V_i_flat, mu_tilde, sigma_ti
     .Call(`_MRDLTM_sample_mu_V_cpp`, beta_zi_flat, mu_i_mat, V_i_flat, mu_tilde, sigma_tilde_mu, w_tilde, W_tilde, n_topic, n_item, n_var)
 }
 
-sample_u_cpp <- function(y_cit, x_it_matrix, beta_zi_flat, z_cit, item_idx, time_idx, n_topic, n_item, n_var) {
-    .Call(`_MRDLTM_sample_u_cpp`, y_cit, x_it_matrix, beta_zi_flat, z_cit, item_idx, time_idx, n_topic, n_item, n_var)
+sample_u_cpp <- function(y_cit, beta_flat, x_flat, z_cit, item_idx, time_idx, n_topic, n_item, n_time, n_cust, n_var) {
+    .Call(`_MRDLTM_sample_u_cpp`, y_cit, beta_flat, x_flat, z_cit, item_idx, time_idx, n_topic, n_item, n_time, n_cust, n_var)
 }
 
 sample_z_cpp <- function(y_cit, eta_flat, beta_flat, x_flat, cust_idx, item_idx, time_idx, rand_u, n_topic, n_item, n_time, n_cust, n_var) {
