@@ -129,44 +129,52 @@ compute_log_likelihood = function(active_data, state, x_it) {
 #' @export
 as.array.mrdltm_mcmc <- function(x, parameter = "log_lik", ...) {
   samples <- x[[parameter]]
-  if (is.null(samples)) stop(paste("Parameter", parameter, "not found."))
+  if (is.null(samples)) stop(paste("Parameter", parameter, "not found in results."))
 
-  # --- Case: log_lik (Vector [iter]) ---
-  if (parameter == "log_lik") {
-    out <- array(samples, dim = c(length(samples), 1, 1))
-    dimnames(out) <- list(NULL, "chain:1", "log_lik")
-    return(out)
-  }
-
-  # --- Case: Variance params (Matrix [iter, n_topic-1]) ---
-  if (parameter %in% c("a2_z", "b2_z")) {
-    samples_mat <- as.matrix(samples)
-    out <- array(samples_mat, dim = c(nrow(samples_mat), 1, ncol(samples_mat)))
-    dimnames(out) <- list(NULL, "chain:1", paste0(parameter, "[", 1:ncol(samples_mat), "]"))
-    return(out)
-  }
-
-  # --- Case: Multi-dim arrays (beta, alpha, mu_i, V_i) ---
   dims <- dim(samples)
+
+  # Case: 1D Vector (like log_lik)
+  if (is.null(dims)) {
+    n_iter <- length(samples)
+    out <- array(samples, dim = c(n_iter, 1, 1))
+    dimnames(out) <- list(NULL, "chain:1", parameter)
+    return(out)
+  }
+
   n_iter <- dims[1]
   total_params <- prod(dims[-1])
 
-  out <- array(samples, dim = c(n_iter, 1, total_params))
+  # Flatten Topic/Item/Time dimensions into a single parameter dimension
+  # Results in [Iterations x Chains(1) x Parameters]
+  out <- samples
+  dim(out) <- c(n_iter, 1, total_params)
 
-  # Generate labels based on dimension structure
-  if (parameter == "beta") {
-    # beta [iter, topic, item, var]
-    p_names <- expand.grid(v = 1:dims[4], i = 1:dims[3], z = 1:dims[2])
-    names_vec <- apply(p_names, 1, function(p) sprintf("beta[z%d,i%d,v%d]", p[3], p[2], p[1]))
-  } else if (parameter == "alpha") {
-    # alpha [iter, topic-1, time, p_dim]
-    p_names <- expand.grid(p = 1:dims[4], t = 1:dims[3], z = 1:dims[2])
-    names_vec <- apply(p_names, 1, function(p) sprintf("alpha[z%d,t%d,p%d]", p[3], p[2], p[1]))
+  # --- Generate descriptive labels for each multi-dimensional index ---
+  # expand.grid order matches R's column-major flattening (Topic -> Item/Time -> Var)
+  if (parameter == "beta_zi") {
+    # dims: [iter, topic, item, var]
+    p_names <- expand.grid(z = 1:dims[2], i = 1:dims[3], v = 1:dims[4])
+    names_vec <- sprintf("beta_zi[%d,%d,%d]", p_names$z, p_names$i, p_names$v)
+  } else if (parameter == "alpha_zt") {
+    # dims: [iter, topic, time, p]
+    p_names <- expand.grid(z = 1:dims[2], t = 1:dims[3], p = 1:dims[4])
+    names_vec <- sprintf("alpha_zt[%d,%d,%d]", p_names$z, p_names$t, p_names$p)
+  } else if (parameter == "eta_zct") {
+    # dims: [iter, topic, cust, time]
+    p_names <- expand.grid(z = 1:dims[2], c = 1:dims[3], t = 1:dims[4])
+    names_vec <- sprintf("eta_zct[%d,%d,%d]", p_names$z, p_names$c, p_names$t)
+  } else if (parameter %in% c("a2_z", "b2_z")) {
+    names_vec <- sprintf("%s[%d]", parameter, 1:dims[2])
   } else {
     names_vec <- paste0(parameter, "[", 1:total_params, "]")
   }
 
-  dimnames(out) <- list(NULL, "chain:1", names_vec)
+  dimnames(out) <- list(
+    iterations = NULL,
+    chains = "chain:1",
+    parameters = names_vec
+  )
+
   return(out)
 }
 
