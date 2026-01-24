@@ -13,6 +13,7 @@ LinkingTo:
     RcppArmadillo
 Imports: 
     dplyr,
+    label.switching,
     MASS,
     MCMCpack,
     pgdraw,
