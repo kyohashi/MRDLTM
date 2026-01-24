@@ -33,7 +33,7 @@ We generate a synthetic dataset.
 library(MRDLTM)
 library(bayesplot)
 library(tidyverse)
-set.seed(42)
+set.seed(123)
 
 n_topic = 3
 toy = generate_toy_data(
@@ -42,7 +42,7 @@ toy = generate_toy_data(
 )
 
 cat("Observed Purchase Rate:", mean(toy$observations$data$y), "\n")
-#> Observed Purchase Rate: 0.5912692
+#> Observed Purchase Rate: 0.5715769
 ```
 
 ### 2. Model Estimation
@@ -62,7 +62,7 @@ timer = system.time({
 #> Starting Gibbs Sampling: 10000 iterations (burn-in: 5000)
 
 cat(sprintf("Total Elapsed Time: %.2f minutes\n", timer["elapsed"] / 60))
-#> Total Elapsed Time: 1.44 minutes
+#> Total Elapsed Time: 1.47 minutes
 ```
 
 Handle the label-switching issue.
@@ -83,7 +83,7 @@ res_fixed = reorder_mrdltm(res, burnin = burnin)
 #>     Retrieve the 1 best clusterings: [...]$clusters
 #>     Retrieve the 1 CPU times: [...]$timings
 #>     Retrieve the 1 X 1 similarity matrix: [...]$similarity
-#>     Label switching finished. Total time: 9.8 seconds.
+#>     Label switching finished. Total time: 10.4 seconds.
 ```
 
 ## Diagnostics and Recovery
@@ -94,7 +94,7 @@ Check the convergence of the Log-Likelihood and the recovery of
 marketing response coefficients ($\beta$).
 
 ``` r
-log_lik_all = extract_samples(res_fixed, "log_lik")
+log_lik_all = extract_samples(res, "log_lik")
 mcmc_trace(log_lik_all) +
   geom_vline(xintercept = burnin, color = "red", linetype = "dashed") +
   ggtitle("Log-Likelihood Trace (Red line: end of burn-in)")
@@ -121,7 +121,7 @@ for (z_est in 1:n_topic) {
   mapping[z_est] = which.min(mses)
 }
 cat("Topic Mapping (Estimated -> True):", paste(1:n_topic, "->", mapping, collapse = ", "), "\n")
-#> Topic Mapping (Estimated -> True): 1 -> 3, 2 -> 2, 3 -> 1
+#> Topic Mapping (Estimated -> True): 1 -> 3, 2 -> 1, 3 -> 2
 
 # Prepare data for Beta Grid Plot
 plot_data_beta = map_dfr(1:n_var, function(v) {

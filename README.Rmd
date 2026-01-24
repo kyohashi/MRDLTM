@@ -35,7 +35,7 @@ We generate a synthetic dataset.
 library(MRDLTM)
 library(bayesplot)
 library(tidyverse)
-set.seed(42)
+set.seed(123)
 
 n_topic = 3
 toy = generate_toy_data(
@@ -73,7 +73,7 @@ res_fixed = reorder_mrdltm(res, burnin = burnin)
 ### log-Likelihood convergence
 Check the convergence of the Log-Likelihood and the recovery of marketing response coefficients ($\beta$).
 ```{r, message = FALSE, warning = FALSE}
-log_lik_all = extract_samples(res_fixed, "log_lik")
+log_lik_all = extract_samples(res, "log_lik")
 mcmc_trace(log_lik_all) +
   geom_vline(xintercept = burnin, color = "red", linetype = "dashed") +
   ggtitle("Log-Likelihood Trace (Red line: end of burn-in)")
