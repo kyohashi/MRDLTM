@@ -213,6 +213,7 @@ extract_samples = function(x, parameter = "log_lik", burnin = 0, thin = 1) {
 #'
 #' @param res A list containing MCMC samples from mrdltm_mcmc.
 #' @param burnin Integer. Number of initial iterations to discard.
+#' @param detection_subset_size Integer. Number of observations used for label detection.
 #'
 #' @return A list of MCMC samples with corrected labels and adjusted baselines.
 #'

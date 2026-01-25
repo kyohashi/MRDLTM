@@ -4,12 +4,14 @@
 \alias{reorder_mrdltm}
 \title{Post-hoc Label Switching Correction for MR-DLTM}
 \usage{
-reorder_mrdltm(res, burnin = 0)
+reorder_mrdltm(res, burnin = 0, detection_subset_size = 20000)
 }
 \arguments{
 \item{res}{A list containing MCMC samples from mrdltm_mcmc.}
 
 \item{burnin}{Integer. Number of initial iterations to discard.}
+
+\item{detection_subset_size}{Integer. Number of observations used for label detection.}
 }
 \value{
 A list of MCMC samples with corrected labels and adjusted baselines.
