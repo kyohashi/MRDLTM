@@ -18,6 +18,17 @@ You can install the development version of MRDLTM from GitHub:
 ``` r
 # install.packages("devtools")
 devtools::install_github("kyohashi/MRDLTM")
+#> 
+#> ── R CMD build ─────────────────────────────────────────────────────────────────
+#>      checking for file ‘/private/var/folders/8p/zs5z191d32j_7f9m7t86sn5h0000gn/T/RtmpprBbug/remotesc69430f2a8d6/kyohashi-MRDLTM-e8c58ed/DESCRIPTION’ ...  ✔  checking for file ‘/private/var/folders/8p/zs5z191d32j_7f9m7t86sn5h0000gn/T/RtmpprBbug/remotesc69430f2a8d6/kyohashi-MRDLTM-e8c58ed/DESCRIPTION’
+#>   ─  preparing ‘MRDLTM’:
+#>      checking DESCRIPTION meta-information ...  ✔  checking DESCRIPTION meta-information
+#>   ─  cleaning src
+#>   ─  checking for LF line-endings in source and make files and shell scripts
+#>   ─  checking for empty or unneeded directories
+#>   ─  building ‘MRDLTM_0.0.0.9000.tar.gz’
+#>      
+#> 
 ```
 
 ## Quick Start: Synthetic Data Experiment
@@ -33,7 +44,7 @@ We generate a synthetic dataset.
 library(MRDLTM)
 library(bayesplot)
 library(tidyverse)
-set.seed(123)
+set.seed(42)
 
 n_topic = 3
 toy = generate_toy_data(
@@ -42,7 +53,7 @@ toy = generate_toy_data(
 )
 
 cat("Observed Purchase Rate:", mean(toy$observations$data$y), "\n")
-#> Observed Purchase Rate: 0.5715769
+#> Observed Purchase Rate: 0.5912692
 ```
 
 ### 2. Model Estimation
@@ -62,7 +73,7 @@ timer = system.time({
 #> Starting Gibbs Sampling: 10000 iterations (burn-in: 5000)
 
 cat(sprintf("Total Elapsed Time: %.2f minutes\n", timer["elapsed"] / 60))
-#> Total Elapsed Time: 1.47 minutes
+#> Total Elapsed Time: 1.57 minutes
 ```
 
 Handle the label-switching issue.
@@ -70,11 +81,13 @@ Handle the label-switching issue.
 ``` r
 # cope with the label-switching
 res_fixed = reorder_mrdltm(res, burnin = burnin)
+#> Preparing detection inputs...
+#> Running PRA algorithm...
 #> 
 #>     ......................................................................................
 #>     . Method                         Time (sec)           Status                         . 
 #>     ......................................................................................
-#>     . PRA                            0.02                 OK                             . 
+#>     . PRA                            0.021                OK                             . 
 #>     ......................................................................................
 #> 
 #>     Relabelling all methods according to method PRA ... done!
@@ -83,7 +96,8 @@ res_fixed = reorder_mrdltm(res, burnin = burnin)
 #>     Retrieve the 1 best clusterings: [...]$clusters
 #>     Retrieve the 1 CPU times: [...]$timings
 #>     Retrieve the 1 X 1 similarity matrix: [...]$similarity
-#>     Label switching finished. Total time: 10.4 seconds.
+#>     Label switching finished. Total time: 10.7 seconds. 
+#> Applying corrections to all parameters...
 ```
 
 ## Diagnostics and Recovery
@@ -121,7 +135,7 @@ for (z_est in 1:n_topic) {
   mapping[z_est] = which.min(mses)
 }
 cat("Topic Mapping (Estimated -> True):", paste(1:n_topic, "->", mapping, collapse = ", "), "\n")
-#> Topic Mapping (Estimated -> True): 1 -> 3, 2 -> 1, 3 -> 2
+#> Topic Mapping (Estimated -> True): 1 -> 1, 2 -> 2, 3 -> 3
 
 # Prepare data for Beta Grid Plot
 plot_data_beta = map_dfr(1:n_var, function(v) {
