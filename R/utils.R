@@ -411,5 +411,6 @@ reorder_mrdltm = function(res, burnin = 0) {
     }
   }
 
+  class(res_out) = class(res)
   return(res_out)
 }

@@ -35,7 +35,7 @@ We generate a synthetic dataset.
 library(MRDLTM)
 library(bayesplot)
 library(tidyverse)
-set.seed(42)
+set.seed(2026)
 
 n_topic = 3
 toy = generate_toy_data(
