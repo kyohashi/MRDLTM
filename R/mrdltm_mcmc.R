@@ -92,11 +92,11 @@ mrdltm_mcmc = function(model, iter = 2000, burnin = 1000, quiet = TRUE) {
     t_eta <- t_eta + (proc.time() - t)[3]
 
     t <- proc.time()
-    sample_alpha(state, obs$Dc, n_topic, length_time, p_dim, obs$priors)
+    sample_alpha(active_data, state, obs$Dc, n_topic, length_time, p_dim, obs$priors)
     t_alpha <- t_alpha + (proc.time() - t)[3]
 
     t <- proc.time()
-    sample_dlm_vars(state, obs$Dc, n_topic, length_time, n_cust, p_dim, obs$priors)
+    sample_dlm_vars(active_data, state, obs$Dc, n_topic, length_time, n_cust, p_dim, obs$priors)
     t_vars <- t_vars + (proc.time() - t)[3]
 
     # --- 5. Record MCMC Samples ---
