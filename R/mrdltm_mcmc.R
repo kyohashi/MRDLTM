@@ -6,11 +6,12 @@
 #' @param model An object of class "mrdltm_model".
 #' @param iter Total MCMC iterations.
 #' @param burnin Burn-in iterations.
+#' @param store_z A flag to store z_cit
 #' @param quiet A flag to show a progress-bar
 #'
 #' @return A list of class "mrdltm_mcmc" containing the MCMC samples.
 #' @export
-mrdltm_mcmc = function(model, iter = 2000, burnin = 1000, quiet = TRUE) {
+mrdltm_mcmc = function(model, iter = 2000, burnin = 1000, store_z = FALSE, quiet = TRUE) {
 
   # --- 1. Preparation ---
   obs = model$observations
@@ -47,7 +48,7 @@ mrdltm_mcmc = function(model, iter = 2000, burnin = 1000, quiet = TRUE) {
     V_i    = array(0, dim = c(iter, n_item, n_var, n_var)),
     alpha_zt  = array(0, dim = c(iter, n_topic - 1, length_time, p_dim)),
     eta_zct   = array(0, dim = c(iter, n_topic - 1, n_cust, length_time)),
-    z_cit     = array(0, dim = c(iter, n_obs)),
+    z_cit     = if (store_z) array(0L, dim = c(iter, n_obs)) else NULL,
     a2_z   = matrix(0, nrow = iter, ncol = n_topic - 1),
     b2_z   = matrix(0, nrow = iter, ncol = n_topic - 1),
     log_lik = numeric(iter)
@@ -83,10 +84,12 @@ mrdltm_mcmc = function(model, iter = 2000, burnin = 1000, quiet = TRUE) {
     history$V_i[m, , , ]      = state$V_i
     history$alpha_zt[m, , , ] = state$alpha_zt
     history$eta_zct[m, , , ]  = state$eta_zct
-    history$z_cit[m, ]        = state$z_cit
     history$a2_z[m, ]         = state$a2_z
     history$b2_z[m, ]         = state$b2_z
     history$log_lik[m]        = compute_log_likelihood(active_data, state, obs$x_it)
+    if (store_z) {
+      history$z_cit[m, ] <- as.integer(state$z_cit)
+    }
 
     # --- Progress message every 100 iterations ---
     if (!quiet && (m %% 100 == 0 || m == iter)) {

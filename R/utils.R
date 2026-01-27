@@ -240,8 +240,14 @@ reorder_mrdltm = function(res, burnin = 0) {
     mcmc_input[, k, ] = matrix(res$beta_zi[idx, k, , ], nrow = m_post)
   }
 
-  # Use ALL observations for detection (No subsetting)
-  z_sample = res$z_cit[idx, , drop = FALSE]
+  # Prepare z_sample only if z_cit exists
+  z_sample = NULL
+  if (!is.null(res$z_cit)) {
+    z_sample = res$z_cit[idx, , drop = FALSE]
+  } else {
+    # Dummy z to prevent internal package error in if(m != dim(z)[1])
+    z_sample = matrix(rep(seq_len(n_topic), m_post), nrow = m_post, byrow = TRUE)
+  }
 
   # Use the iteration with max log-likelihood as the pivot
   pivot_m = which.max(res$log_lik[idx])
