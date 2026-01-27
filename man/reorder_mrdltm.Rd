@@ -9,7 +9,7 @@ reorder_mrdltm(res, burnin = 0)
 \arguments{
 \item{res}{A list containing MCMC samples from mrdltm_mcmc.}
 
-\item{burnin}{Integer. Number of initial iterations to discard.}
+\item{burnin}{Integer. Number of ORIGINAL iterations to discard.}
 }
 \value{
 A list of MCMC samples with corrected labels and adjusted baselines.

@@ -4,7 +4,14 @@
 \alias{mrdltm_mcmc}
 \title{Gibbs Sampler for MR-DLTM}
 \usage{
-mrdltm_mcmc(model, iter = 2000, burnin = 1000, store_z = FALSE, quiet = TRUE)
+mrdltm_mcmc(
+  model,
+  iter = 2000,
+  burnin = 1000,
+  thin = 1,
+  store_z = FALSE,
+  quiet = TRUE
+)
 }
 \arguments{
 \item{model}{An object of class "mrdltm_model".}
@@ -12,6 +19,8 @@ mrdltm_mcmc(model, iter = 2000, burnin = 1000, store_z = FALSE, quiet = TRUE)
 \item{iter}{Total MCMC iterations.}
 
 \item{burnin}{Burn-in iterations.}
+
+\item{thin}{MCMC thin setting.}
 
 \item{store_z}{A flag to store z_cit}
 

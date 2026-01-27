@@ -6,12 +6,13 @@
 #' @param model An object of class "mrdltm_model".
 #' @param iter Total MCMC iterations.
 #' @param burnin Burn-in iterations.
+#' @param thin MCMC thin setting.
 #' @param store_z A flag to store z_cit
 #' @param quiet A flag to show a progress-bar
 #'
 #' @return A list of class "mrdltm_mcmc" containing the MCMC samples.
 #' @export
-mrdltm_mcmc = function(model, iter = 2000, burnin = 1000, store_z = FALSE, quiet = TRUE) {
+mrdltm_mcmc = function(model, iter = 2000, burnin = 1000, thin = 1, store_z = FALSE, quiet = TRUE) {
 
   # --- 1. Preparation ---
   obs = model$observations
@@ -41,17 +42,24 @@ mrdltm_mcmc = function(model, iter = 2000, burnin = 1000, store_z = FALSE, quiet
   )
 
   # --- 3. Pre-allocate history ---
+  # Calculate save dimensions for heavy parameters
+  n_save = floor((iter - burnin) / thin)
   # We store all iterations to allow users to inspect burn-in if needed.
   history = list(
-    beta_zi   = array(0, dim = c(iter, n_topic, n_item, n_var)),
-    mu_i   = array(0, dim = c(iter, n_item, n_var)),
-    V_i    = array(0, dim = c(iter, n_item, n_var, n_var)),
-    alpha_zt  = array(0, dim = c(iter, n_topic - 1, length_time, p_dim)),
-    eta_zct   = array(0, dim = c(iter, n_topic - 1, n_cust, length_time)),
-    z_cit     = if (store_z) array(0L, dim = c(iter, n_obs)) else NULL,
-    a2_z   = matrix(0, nrow = iter, ncol = n_topic - 1),
-    b2_z   = matrix(0, nrow = iter, ncol = n_topic - 1),
-    log_lik = numeric(iter)
+    beta_zi   = array(0, dim = c(n_save, n_topic, n_item, n_var)),
+    mu_i   = array(0, dim = c(n_save, n_item, n_var)),
+    V_i    = array(0, dim = c(n_save, n_item, n_var, n_var)),
+    alpha_zt  = array(0, dim = c(n_save, n_topic - 1, length_time, p_dim)),
+    eta_zct   = array(0, dim = c(n_save, n_topic - 1, n_cust, length_time)),
+    z_cit     = if (store_z) array(0L, dim = c(n_save, n_obs)) else NULL,
+    a2_z   = matrix(0, nrow = n_save, ncol = n_topic - 1),
+    b2_z   = matrix(0, nrow = n_save, ncol = n_topic - 1),
+    log_lik = numeric(iter),
+    # Metadata for post-processing
+    iter = iter,
+    thin = thin,
+    burnin = burnin,
+    store_z = store_z
   )
 
   # --- 4. Gibbs Sampling Loop ---
@@ -79,16 +87,22 @@ mrdltm_mcmc = function(model, iter = 2000, burnin = 1000, store_z = FALSE, quiet
     sample_dlm_vars(active_data, state, obs$Dc, n_topic, length_time, n_cust, p_dim, obs$priors)
 
     # --- 5. Record MCMC Samples ---
-    history$beta_zi[m, , , ]  = state$beta_zi
-    history$mu_i[m, , ]       = state$mu_i
-    history$V_i[m, , , ]      = state$V_i
-    history$alpha_zt[m, , , ] = state$alpha_zt
-    history$eta_zct[m, , , ]  = state$eta_zct
-    history$a2_z[m, ]         = state$a2_z
-    history$b2_z[m, ]         = state$b2_z
-    history$log_lik[m]        = compute_log_likelihood(active_data, state, obs$x_it)
-    if (store_z) {
-      history$z_cit[m, ] <- as.integer(state$z_cit)
+    # Always record log-likelihood
+    history$log_lik[m] <- compute_log_likelihood(active_data, state, obs$x_it)
+    # Record heavy parameters only after burn-in and according to thinning
+    if (m > burnin && (m - burnin) %% thin == 0) {
+      s_idx <- (m - burnin) / thin
+
+      history$beta_zi[s_idx, , , ]  = state$beta_zi
+      history$mu_i[s_idx, , ]       = state$mu_i
+      history$V_i[s_idx, , , ]      = state$V_i
+      history$alpha_zt[s_idx, , , ] = state$alpha_zt
+      history$eta_zct[s_idx, , , ]  = state$eta_zct
+      history$a2_z[s_idx, ]         = state$a2_z
+      history$b2_z[s_idx, ]         = state$b2_z
+      if (store_z) {
+        history$z_cit[s_idx, ] <- as.integer(state$z_cit)
+        }
     }
 
     # --- Progress message every 100 iterations ---

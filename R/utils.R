@@ -211,7 +211,7 @@ extract_samples = function(x, parameter = "log_lik", burnin = 0, thin = 1) {
 #' Applies burn-in removal and relabelling to ALL detected parameters.
 #'
 #' @param res A list containing MCMC samples from mrdltm_mcmc.
-#' @param burnin Integer. Number of initial iterations to discard.
+#' @param burnin Integer. Number of ORIGINAL iterations to discard.
 #'
 #' @return A list of MCMC samples with corrected labels and adjusted baselines.
 #'
@@ -219,11 +219,14 @@ extract_samples = function(x, parameter = "log_lik", burnin = 0, thin = 1) {
 #' @export
 reorder_mrdltm = function(res, burnin = 0) {
 
-  # --- 1. Basic Dimensions ---
-  n_iter  = dim(res$beta_zi)[1]
+  # --- 1. Basic Dimensions with Thinning Awareness ---
+  thin_rate = if (!is.null(res$thin)) res$thin else 1
+  n_total_samples = dim(res$beta_zi)[1]
   n_topic = dim(res$beta_zi)[2]
-  n_obs   = dim(res$z_cit)[2]
-  idx     = (burnin + 1):n_iter
+
+  # Determine indices to keep based on original burnin count
+  n_skip  = floor(burnin / thin_rate)
+  idx     = (n_skip + 1):n_total_samples
   m_post  = length(idx)
 
   if (m_post <= 0) stop("Burn-in exceeds total iterations.")
@@ -231,7 +234,6 @@ reorder_mrdltm = function(res, burnin = 0) {
   # --- 2. Label Switching Detection (PRA) ---
   cat("Preparing detection inputs...\n")
 
-  # Use Beta for permutation detection (standard practice)
   n_item = dim(res$beta_zi)[3]
   n_var  = dim(res$beta_zi)[4]
 
@@ -240,12 +242,14 @@ reorder_mrdltm = function(res, burnin = 0) {
     mcmc_input[, k, ] = matrix(res$beta_zi[idx, k, , ], nrow = m_post)
   }
 
-  # Prepare z_sample only if z_cit exists
-  z_sample = NULL
-  if (!is.null(res$z_cit)) {
+  # Prepare z_sample: Use actual data if exists, otherwise dummy spanning 1:K
+  has_z = !is.null(res$z_cit)
+  if (has_z) {
+    n_obs = ncol(res$z_cit)
     z_sample = res$z_cit[idx, , drop = FALSE]
   } else {
-    # Dummy z to prevent internal package error in if(m != dim(z)[1])
+    n_obs = 0
+    # Dummy z ensures max allocation == K to satisfy package checks
     z_sample = matrix(rep(seq_len(n_topic), m_post), nrow = m_post, byrow = TRUE)
   }
 
@@ -267,71 +271,55 @@ reorder_mrdltm = function(res, burnin = 0) {
   # Clean up memory
   rm(mcmc_input, z_sample, ls_res); gc()
 
-  # --- 3. Apply Permutations and Filter Burn-in ---
-
-  cat("Applying corrections to all parameters...\n")
+  # --- 3. Internal Helper Functions ---
 
   # Helper: Shift logic for Location Parameters (alpha, eta) where Baseline = 0
   apply_rel_shift_update = function(arr, perms, n_topic, idx) {
-    d_orig = dim(arr) # [iter, K-1, ...]
-    out_dims = d_orig
-    out_dims[1] = length(idx) # Adjust iter dim
+    d_orig = dim(arr)
+    out_dims = d_orig; out_dims[1] = length(idx)
 
-    # Check if input is consistent with K-1
-    if (d_orig[2] != n_topic - 1) return(arr[idx, , , , drop=FALSE]) # Fallback
+    if (d_orig[2] != n_topic - 1) return(arr[idx, , , , drop=FALSE])
 
     result = array(0, dim = out_dims)
-
     for (i in seq_len(length(idx))) {
       m = idx[i]
-      p_row = perms[i, ]       # e.g. [2, 3, 1] means Old 2->New 1, Old 3->New 2...
-      inv_p = order(p_row)     # e.g. [3, 1, 2] means New 1 comes from Old 3...
+      p_row = perms[i, ]; inv_p = order(p_row)
+      k_orig_base = inv_p[n_topic] # Original topic assigned to New Baseline
 
-      k_orig_base = inv_p[n_topic] # The original topic that is assigned to New Baseline
-
-      # Construct Full Slice [K, ...] for this iteration
       slice_dims = d_orig[-1]; slice_dims[1] = n_topic
       full_slice = array(0, dim = slice_dims)
 
-      # Fill 1:(K-1) from the data
-      full_slice[1:(n_topic - 1), , ] = arr[m, , , , drop = FALSE]
-      # K-th is implicitly 0 (Baseline)
-
-      # The value of the topic that will become the NEW baseline
-      shift_val = full_slice[k_orig_base, , , drop = FALSE]
-
-      # Calculate New Values: New_k = Old_k - Shift
-      for (new_k in seq_len(n_topic - 1)) {
-        orig_k = inv_p[new_k]
-        result[i, new_k, , ] = full_slice[orig_k, , ] - shift_val[1, , ]
+      if (length(d_orig) == 4) {
+        full_slice[1:(n_topic - 1), , ] = arr[m, , , ]
+        shift_val = full_slice[k_orig_base, , , drop = FALSE]
+        for (new_k in seq_len(n_topic - 1)) {
+          orig_k = inv_p[new_k]
+          result[i, new_k, , ] = full_slice[orig_k, , ] - shift_val[1, , ]
+        }
+      } else {
+        full_slice[1:(n_topic - 1), ] = arr[m, , ]
+        shift_val = full_slice[k_orig_base, , drop = FALSE]
+        for (new_k in seq_len(n_topic - 1)) {
+          orig_k = inv_p[new_k]
+          result[i, new_k, ] = full_slice[orig_k, ] - shift_val[1, ]
+        }
       }
     }
     return(result)
   }
 
   # Helper: Reorder logic for K-1 Parameters (mu, phi, sigma, a2) without shift
-  # Assumes missing K-th value needs imputation (e.g. mean or 0) to allow swapping
   apply_k_minus_1_reorder = function(arr, perms, n_topic, idx, impute_fn = mean) {
-    d_orig = dim(arr)
-    out_dims = d_orig
-    out_dims[1] = length(idx)
-
+    d_orig = dim(arr); out_dims = d_orig; out_dims[1] = length(idx)
     result = array(0, dim = out_dims)
 
     for (i in seq_len(length(idx))) {
-      m = idx[i]
-      p_row = perms[i, ]
-      inv_p = order(p_row)
-
-      # Create full vector/matrix
-      vals = arr[m, , drop=FALSE] # Handle vector or matrix slice
-
-      # Impute the K-th element
-      if (length(d_orig) == 2) { # [iter, K-1]
+      m = idx[i]; inv_p = order(perms[i, ])
+      vals = arr[m, , drop=FALSE]
+      if (length(d_orig) == 2) {
         full_vec = c(vals, impute_fn(vals))
         result[i, ] = full_vec[inv_p[1:(n_topic - 1)]]
       } else {
-        # Fallback for higher dims
         result[i, , ] = vals
       }
     }
@@ -340,28 +328,19 @@ reorder_mrdltm = function(res, burnin = 0) {
 
   # Helper: Standard Reordering for K-dim Parameters
   apply_standard_reorder = function(arr, perms, idx) {
-    d_orig = dim(arr)
-    out_dims = d_orig
-    out_dims[1] = length(idx)
+    d_orig = dim(arr); out_dims = d_orig; out_dims[1] = length(idx)
     result = array(0, dim = out_dims)
-
-    # Generic loop
     for (i in seq_len(length(idx))) {
-      m = idx[i]
-      inv_p = order(perms[i, ])
-
-      if (length(d_orig) == 3) { # e.g. u_z [iter, K, dim]
-        result[i, , ] = arr[m, inv_p, ]
-      } else if (length(d_orig) == 4) { # e.g. beta [iter, K, I, V]
-        result[i, , , ] = arr[m, inv_p, , ]
-      } else {
-        result[i, ] = arr[m, inv_p] # 2D
-      }
+      m = idx[i]; inv_p = order(perms[i, ])
+      if (length(d_orig) == 3) result[i, , ] = arr[m, inv_p, ]
+      else if (length(d_orig) == 4) result[i, , , ] = arr[m, inv_p, , ]
+      else result[i, ] = arr[m, inv_p]
     }
     return(result)
   }
 
-  # --- MAIN LOOP Over All Elements in List ---
+  # --- 4. MAIN LOOP Over All Elements in List ---
+  cat("Applying corrections to all parameters...\n")
   res_out = list()
 
   for (name in names(res)) {
@@ -372,44 +351,32 @@ reorder_mrdltm = function(res, burnin = 0) {
     if (name == "z_cit") {
       z_out = matrix(0L, nrow = m_post, ncol = n_obs)
       for (i in seq_len(m_post)) {
-        m = idx[i]
-        p_vec = perms[i, ]
+        m = idx[i]; p_vec = perms[i, ]
         z_out[i, ] = p_vec[obj[m, ]]
       }
       res_out[[name]] = z_out
 
-      # 2. Handle Location Parameters (Alpha, Eta) -> Shift Logic
-    } else if (name %in% c("alpha_zt", "eta_zct")) {
+      # 2. Handle Location Parameters (Alpha, Eta, Mu) -> Shift Logic
+    } else if (name %in% c("alpha_zt", "eta_zct", "mu_zt")) {
       res_out[[name]] = apply_rel_shift_update(obj, perms, n_topic, idx)
 
       # 3. Handle Standard K-dim Parameters
     } else if (is.array(obj) && length(dim(obj)) >= 2 && dim(obj)[2] == n_topic) {
       res_out[[name]] = apply_standard_reorder(obj, perms, idx)
 
-      # 4. Handle Other K-1 Parameters (Variance/Phi/Mu)
-    } else if (name %in% c("a2_z", "phi_z", "sigma_z", "mu_zt") &&
+      # 4. Handle Other K-1 Parameters (Variance/Phi)
+    } else if (name %in% c("a2_z", "phi_z", "sigma_z") &&
                is.array(obj) && dim(obj)[2] == n_topic - 1) {
+      res_out[[name]] = apply_k_minus_1_reorder(obj, perms, n_topic, idx)
 
-      if (length(dim(obj)) == 2) {
-        res_out[[name]] = apply_k_minus_1_reorder(obj, perms, n_topic, idx, impute_fn = mean)
-      } else {
-        # Treat mu_zt as location parameter (Shift Logic)
-        if (name == "mu_zt") {
-          res_out[[name]] = apply_rel_shift_update(obj, perms, n_topic, idx)
-        } else {
-          args = rep(list(bquote()), length(dim(obj)))
-          args[[1]] = idx
-          res_out[[name]] = do.call("[", c(list(obj), args, drop=FALSE))
-        }
-      }
-
-      # 5. Default: Just remove burn-in
+      # 5. Default: Remove burn-in and retain metadata
     } else {
-      if (is.vector(obj)) {
+      if (name == "thin") {
+        res_out[[name]] = obj
+      } else if (is.vector(obj) && length(obj) == n_total_samples) {
         res_out[[name]] = obj[idx]
-      } else if (is.array(obj)) {
-        args = rep(list(bquote()), length(dim(obj)))
-        args[[1]] = idx
+      } else if (is.array(obj) && dim(obj)[1] == n_total_samples) {
+        args = rep(list(bquote()), length(dim(obj))); args[[1]] = idx
         res_out[[name]] = do.call("[", c(list(obj), args, drop=FALSE))
       } else {
         res_out[[name]] = obj
@@ -418,5 +385,6 @@ reorder_mrdltm = function(res, burnin = 0) {
   }
 
   class(res_out) = class(res)
+  cat("Label switching correction complete.\n")
   return(res_out)
 }
