@@ -12,9 +12,13 @@ reorder_mrdltm(res, burnin = 0)
 \item{burnin}{Integer. Number of ORIGINAL iterations to discard.}
 }
 \value{
-A list of MCMC samples with corrected labels and adjusted baselines.
+A list of MCMC samples with corrected labels.
 }
 \description{
-Aligns topic labels across MCMC iterations using the Pivot Relabelling Algorithm (PRA).
-Applies burn-in removal and relabelling to ALL detected parameters.
+Aligns topic labels across MCMC iterations using \code{label.switching} package.
+Automatically selects the algorithm based on the availability of 'z_cit':
+\itemize{
+\item If \code{store_z = TRUE}: Uses the \strong{ECR algorithm}. Efficient for large Z but requires memory for Z.
+\item If \code{store_z = FALSE}: Uses the \strong{PRA algorithm}. Standard method using parameters, slower for large Z.
+}
 }

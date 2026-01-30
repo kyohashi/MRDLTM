@@ -207,13 +207,17 @@ extract_samples = function(x, parameter = "log_lik", burnin = 0, thin = 1) {
 #' Post-hoc Label Switching Correction for MR-DLTM
 #'
 #' @description
-#' Aligns topic labels across MCMC iterations using the Pivot Relabelling Algorithm (PRA).
-#' Applies burn-in removal and relabelling to ALL detected parameters.
+#' Aligns topic labels across MCMC iterations using `label.switching` package.
+#' Automatically selects the algorithm based on the availability of 'z_cit':
+#' \itemize{
+#'   \item If \code{store_z = TRUE}: Uses the **ECR algorithm**. Efficient for large Z but requires memory for Z.
+#'   \item If \code{store_z = FALSE}: Uses the **PRA algorithm**. Standard method using parameters, slower for large Z.
+#' }
 #'
 #' @param res A list containing MCMC samples from mrdltm_mcmc.
 #' @param burnin Integer. Number of ORIGINAL iterations to discard.
 #'
-#' @return A list of MCMC samples with corrected labels and adjusted baselines.
+#' @return A list of MCMC samples with corrected labels.
 #'
 #' @importFrom label.switching label.switching
 #' @export
@@ -231,47 +235,85 @@ reorder_mrdltm = function(res, burnin = 0) {
 
   if (m_post <= 0) stop("Burn-in exceeds total iterations.")
 
-  # --- 2. Label Switching Detection (PRA) ---
-  cat("Preparing detection inputs...\n")
+  # Common: Find Pivot Index (Iteration with max log-likelihood)
+  # Note: log_lik is usually full length, so we subset it to find the best in the post-burnin set
+  log_lik_post = res$log_lik[idx]
+  pivot_local_idx = which.max(log_lik_post) # Index relative to idx
+  pivot_global_idx = idx[pivot_local_idx]   # Index relative to total samples
 
-  n_item = dim(res$beta_zi)[3]
-  n_var  = dim(res$beta_zi)[4]
+  perms = NULL
 
-  mcmc_input = array(0, dim = c(m_post, n_topic, n_item * n_var))
-  for (k in seq_len(n_topic)) {
-    mcmc_input[, k, ] = matrix(res$beta_zi[idx, k, , ], nrow = m_post)
-  }
-
-  # Prepare z_sample: Use actual data if exists, otherwise dummy spanning 1:K
+  # --- 2. Branching Logic based on store_z ---
   has_z = !is.null(res$z_cit)
+
   if (has_z) {
-    n_obs = ncol(res$z_cit)
-    z_sample = res$z_cit[idx, , drop = FALSE]
+    # ==========================================
+    # PATH A: ECR Algorithm (store_z = TRUE)
+    # ==========================================
+    cat("z_cit found. Running ECR algorithm (Method: ECR)...\n")
+
+    # Extract Z for post-burnin only
+    # res$z_cit is [Iter x Obs]
+    z_subset = res$z_cit[idx, , drop = FALSE]
+
+    # Pivot Z vector
+    zpivot = z_subset[pivot_local_idx, ]
+
+    # Run ECR
+    # ECR uses the latent allocations to find the best permutation
+    ls_res = label.switching::label.switching(
+      method = "ECR",
+      z      = z_subset,
+      zpivot = zpivot,
+      K      = n_topic
+    )
+
+    perms = as.matrix(ls_res$permutations$ECR)
+
+    # Clean up memory
+    rm(z_subset, ls_res); gc()
+
   } else {
-    n_obs = 0
-    # Dummy z ensures max allocation == K to satisfy package checks
-    z_sample = matrix(rep(seq_len(n_topic), m_post), nrow = m_post, byrow = TRUE)
+    # ==========================================
+    # PATH B: PRA Algorithm (store_z = FALSE)
+    # ==========================================
+    cat("z_cit NOT found. Running PRA algorithm (Method: PRA)...\n")
+
+    # Prepare MCMC input for PRA (using Beta)
+    # PRA requires: [MCMC Iterations x K x Parameters]
+    n_item = dim(res$beta_zi)[3]
+    n_var  = dim(res$beta_zi)[4]
+
+    # Flatten Item x Var dimensions
+    mcmc_input = array(0, dim = c(m_post, n_topic, n_item * n_var))
+    for (k in seq_len(n_topic)) {
+      mcmc_input[, k, ] = matrix(res$beta_zi[idx, k, , ], nrow = m_post)
+    }
+
+    # Dummy Z (required by label.switching function signature even for PRA,
+    # though PRA relies on 'mcmc' and 'prapivot')
+    # We create a minimal dummy that satisfies the check (must contain 1:K)
+    z_dummy = matrix(rep(seq_len(n_topic), m_post), nrow = m_post, byrow = TRUE)
+
+    # Pivot Parameter Matrix
+    prapivot = mcmc_input[pivot_local_idx, , ]
+
+    # Run PRA
+    ls_res = label.switching::label.switching(
+      method   = "PRA",
+      mcmc     = mcmc_input,
+      prapivot = prapivot,
+      z        = z_dummy,
+      K        = n_topic
+    )
+
+    perms = as.matrix(ls_res$permutations$PRA)
+
+    # Clean up memory
+    rm(mcmc_input, z_dummy, ls_res); gc()
   }
 
-  # Use the iteration with max log-likelihood as the pivot
-  pivot_m = which.max(res$log_lik[idx])
-
-  cat("Running PRA algorithm...\n")
-  ls_res = label.switching::label.switching(
-    method   = "PRA",
-    mcmc     = mcmc_input,
-    prapivot = mcmc_input[pivot_m, , ],
-    z        = z_sample,
-    K        = n_topic
-  )
-
-  # permutations: [m_post x n_topic]
-  perms = as.matrix(ls_res$permutations$PRA)
-
-  # Clean up memory
-  rm(mcmc_input, z_sample, ls_res); gc()
-
-  # --- 3. Internal Helper Functions ---
+  # --- 3. Apply Corrections (Internal Helper Functions) ---
 
   # Helper: Shift logic for Location Parameters (alpha, eta) where Baseline = 0
   apply_rel_shift_update = function(arr, perms, n_topic, idx) {
@@ -347,25 +389,29 @@ reorder_mrdltm = function(res, burnin = 0) {
     obj = res[[name]]
     if (is.null(obj)) next
 
-    # 1. Handle Z_CIT (Values need mapping)
+    # 1. Handle Z_CIT (Values need mapping if it exists)
     if (name == "z_cit") {
-      z_out = matrix(0L, nrow = m_post, ncol = n_obs)
-      for (i in seq_len(m_post)) {
-        m = idx[i]; p_vec = perms[i, ]
-        z_out[i, ] = p_vec[obj[m, ]]
+      # Only process if it's a matrix (i.e., was stored)
+      if (is.matrix(obj)) {
+        n_obs = ncol(obj)
+        z_out = matrix(0L, nrow = m_post, ncol = n_obs)
+        for (i in seq_len(m_post)) {
+          m = idx[i]; p_vec = perms[i, ]
+          z_out[i, ] = p_vec[obj[m, ]]
+        }
+        res_out[[name]] = z_out
       }
-      res_out[[name]] = z_out
 
       # 2. Handle Location Parameters (Alpha, Eta, Mu) -> Shift Logic
     } else if (name %in% c("alpha_zt", "eta_zct", "mu_zt")) {
       res_out[[name]] = apply_rel_shift_update(obj, perms, n_topic, idx)
 
-      # 3. Handle Standard K-dim Parameters
+      # 3. Handle Standard K-dim Parameters (beta_zi etc.)
     } else if (is.array(obj) && length(dim(obj)) >= 2 && dim(obj)[2] == n_topic) {
       res_out[[name]] = apply_standard_reorder(obj, perms, idx)
 
-      # 4. Handle Other K-1 Parameters (Variance/Phi)
-    } else if (name %in% c("a2_z", "phi_z", "sigma_z") &&
+      # 4. Handle Other K-1 Parameters (Variance/Phi etc.)
+    } else if (name %in% c("a2_z", "phi_z", "sigma_z", "b2_z") &&
                is.array(obj) && dim(obj)[2] == n_topic - 1) {
       res_out[[name]] = apply_k_minus_1_reorder(obj, perms, n_topic, idx)
 
