@@ -8,13 +8,13 @@
 #' @param state An environment containing the current MCMC state.
 #' @param Dc Matrix of customer covariates (n_cust x p_dim).
 #' @param n_topic Total number of topics (Z).
-#' @param length_time Total length of time points (T).
+#' @param n_time Total number of time points (T).
 #' @param p_dim Dimension of customer covariates (P).
 #' @param priors A list of hyperparameters from the model object.
 #'
 #' @return NULL
 #' @noRd
-sample_alpha = function(active_data, state, Dc, n_topic, length_time, p_dim, priors) {
+sample_alpha = function(active_data, state, Dc, n_topic, n_time, p_dim, priors) {
   mz0 = if (!is.null(priors$mz0)) priors$mz0 else rep(0, p_dim)
   Sz0 = if (!is.null(priors$Sz0)) priors$Sz0 else diag(10, p_dim)
 
@@ -28,7 +28,7 @@ sample_alpha = function(active_data, state, Dc, n_topic, length_time, p_dim, pri
     obs_cust     = as.integer(active_data$cust),
     obs_time     = as.integer(active_data$time),
     n_topic      = n_topic,
-    n_time       = length_time,
+    n_time       = n_time,
     n_cust       = nrow(Dc),
     p_dim        = p_dim
   )

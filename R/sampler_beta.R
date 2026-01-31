@@ -3,17 +3,17 @@
 #' @description
 #' Sample the topic-item specific response coefficients beta_zi
 #'
-#' @param active_data A data frame of active observations (cust, item, time)
-#' @param state An environment containing the current MCMC state
-#' @param x_it An array of marketing covariates
-#' @param n_item Number of items (I)
-#' @param n_topic Number of latent topics (Z)
-#' @param n_var Number of marketing covariates including intercept (M)
-#' @param length_time Total length of time points (T).
+#' @param active_data A data frame of active observations (cust, item, time).
+#' @param state An environment containing the current MCMC state.
+#' @param x_it An array of marketing covariates.
+#' @param n_item Number of items (I).
+#' @param n_topic Number of latent topics (Z).
+#' @param n_var Number of marketing covariates including intercept (M).
+#' @param n_time Total number of time points (T).
 #'
 #' @return NULL
 #' @noRd
-sample_beta = function(active_data, state, x_it, n_item, n_topic, n_var, length_time){
+sample_beta = function(active_data, state, x_it, n_item, n_topic, n_var, n_time) {
 
   # Call optimized C++ sampler
   # Dimension check: x_it is [I, T, M]
@@ -28,7 +28,7 @@ sample_beta = function(active_data, state, x_it, n_item, n_topic, n_var, length_
     V_i_flat     = as.numeric(aperm(state$V_i, c(2, 3, 1))),
     n_topic      = n_topic,
     n_item       = n_item,
-    n_time       = length_time,
+    n_time       = n_time,
     n_var        = n_var
   )
 

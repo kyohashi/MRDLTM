@@ -11,14 +11,14 @@ test_that("sample_beta updates coefficients based on latent utility", {
   n_topic = 2
   n_item = 1
   n_var = 1
-  length_time = 2
+  n_time = 2
 
   state = init_state(
     active_data = active_data,
     n_item = n_item,
     n_cust = 1,
     n_topic = n_topic,
-    length_time = length_time,
+    n_time = n_time,
     n_var = n_var,
     p_dim = 1
   )
@@ -36,7 +36,7 @@ test_that("sample_beta updates coefficients based on latent utility", {
   initial_beta = state$beta_zi + 0
 
   # --- Execution ---
-  sample_beta(active_data, state, x_it, n_item, n_topic, n_var, length_time)
+  sample_beta(active_data, state, x_it, n_item, n_topic, n_var, n_time)
 
   # --- Verification ---
   # beta_zi should be updated

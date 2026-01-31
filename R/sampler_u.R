@@ -4,9 +4,9 @@
 #' Sample latent utility from a truncated normal distribution
 #' The result is updated directly within the state environment.
 #'
-#' @param active_data A data frame of active observations which means (c,i,t, y) combo in C x Ic x Tc
-#' @param state An environment containing the current MCMC state
-#' @param x_it An array of marketing covariates
+#' @param active_data A data frame of active observations (c, i, t, y) in C x Ic x Tc.
+#' @param state An environment containing the current MCMC state.
+#' @param x_it An array of marketing covariates.
 #' @param n_item Total number of items (I).
 #' @param n_topic Total number of topics (Z).
 #' @param n_cust Total number of customers (C).

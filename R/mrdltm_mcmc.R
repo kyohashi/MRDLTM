@@ -28,7 +28,7 @@ mrdltm_mcmc = function(model, iter = 2000, burnin = 1000, thin = 1,
   ## Get dimensions
   n_obs       = nrow(active_data)
   n_item      = dim(obs$x_it)[1]
-  length_time = dim(obs$x_it)[2]
+  n_time = dim(obs$x_it)[2]
   n_var       = dim(obs$x_it)[3]
   n_cust      = nrow(obs$Dc)
   n_topic     = model$n_topic
@@ -40,7 +40,7 @@ mrdltm_mcmc = function(model, iter = 2000, burnin = 1000, thin = 1,
     n_item      = n_item,
     n_cust      = n_cust,
     n_topic     = n_topic,
-    length_time = length_time,
+    n_time = n_time,
     n_var       = n_var,
     p_dim       = p_dim
   )
@@ -58,8 +58,8 @@ mrdltm_mcmc = function(model, iter = 2000, burnin = 1000, thin = 1,
     beta_zi   = array(0, dim = c(n_save, n_topic, n_item, n_var)),
     mu_i      = array(0, dim = c(n_save, n_item, n_var)),
     V_i       = array(0, dim = c(n_save, n_item, n_var, n_var)),
-    alpha_zt  = array(0, dim = c(n_save, n_topic - 1, length_time, p_dim)),
-    eta_zct   = array(0, dim = c(n_save, n_topic - 1, n_cust, length_time)),
+    alpha_zt  = array(0, dim = c(n_save, n_topic - 1, n_time, p_dim)),
+    eta_zct   = array(0, dim = c(n_save, n_topic - 1, n_cust, n_time)),
     prob_z    = array(0, dim = c(n_save, n_prob_sample, n_topic)),
     prob_idx  = prob_idx,
     a2_z      = matrix(0, nrow = n_save, ncol = n_topic - 1),
@@ -93,13 +93,13 @@ mrdltm_mcmc = function(model, iter = 2000, burnin = 1000, thin = 1,
     sample_u(active_data, state, obs$x_it, n_item, n_topic, n_cust, n_var)
 
     # C. Response Coefficients
-    sample_beta(active_data, state, obs$x_it, n_item, n_topic, n_var, length_time)
+    sample_beta(active_data, state, obs$x_it, n_item, n_topic, n_var, n_time)
     sample_mu_V(state, n_item, n_topic, n_var, obs$priors)
 
     # D. Topic Occupancy (DLM part)
-    sample_eta(active_data, state, obs$Dc, n_cust, n_topic, length_time, p_dim)
-    sample_alpha(active_data, state, obs$Dc, n_topic, length_time, p_dim, obs$priors)
-    sample_dlm_vars(active_data, state, obs$Dc, n_topic, length_time, n_cust, p_dim, obs$priors)
+    sample_eta(active_data, state, obs$Dc, n_cust, n_topic, n_time, p_dim)
+    sample_alpha(active_data, state, obs$Dc, n_topic, n_time, p_dim, obs$priors)
+    sample_dlm_vars(active_data, state, obs$Dc, n_topic, n_time, n_cust, p_dim, obs$priors)
 
     # --- 5. Record MCMC Samples ---
     # Always record log-likelihood

@@ -16,7 +16,7 @@ extract_samples(x, parameter = "log_lik", burnin = 0, thin = 1)
 \item{thin}{Interval for thinning. Defaults to 1.}
 }
 \value{
-A 3D array (iteration, chain, parameter)
+A 3D array (iteration, chain, parameter).
 }
 \description{
 Extract MCMC Samples with Burn-in and Thinning

@@ -14,7 +14,7 @@
 \item{...}{Not used.}
 }
 \value{
-A 3D array (iteration, chain, parameter)
+A 3D array (iteration, chain, parameter).
 }
 \description{
 Convert MCMC samples to array for bayesplot

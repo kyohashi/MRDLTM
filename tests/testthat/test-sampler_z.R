@@ -3,7 +3,7 @@ test_that("sample_z updates topic assignments without error", {
   n_cust = 2
   n_item = 2
   n_topic = 3
-  length_time = 2
+  n_time = 2
   n_var = 2 # Intercept + 1 covariate
 
   # Mock active_data
@@ -21,15 +21,15 @@ test_that("sample_z updates topic assignments without error", {
     n_item = n_item,
     n_cust = n_cust,
     n_topic = n_topic,
-    length_time = length_time,
+    n_time = n_time,
     n_var = n_var,
     p_dim = 1
   )
 
   # Setup mock covariates (intercepts)
-  x_it = array(0, dim = c(n_item, length_time, n_var))
+  x_it = array(0, dim = c(n_item, n_time, n_var))
   x_it[,,1] = 1 # Intercepts
-  x_it[,,2] = rnorm(n_item * length_time) # Random covariate
+  x_it[,,2] = rnorm(n_item * n_time) # Random covariate
 
   # Setup mock parameters in state
   # Topic 1 has high beta for intercept, Topic 2 has low beta
@@ -38,7 +38,7 @@ test_that("sample_z updates topic assignments without error", {
   state$beta_zi[3, , 1] = 0.0
 
   # Occupancy eta (all near 0)
-  state$eta_zct = array(0, dim = c(n_topic - 1, n_cust, length_time))
+  state$eta_zct = array(0, dim = c(n_topic - 1, n_cust, n_time))
 
   # Store initial z_cit
   initial_z = state$z_cit + 0

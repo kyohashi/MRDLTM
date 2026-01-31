@@ -14,14 +14,14 @@ mrdltm_model(observations, n_topic = 3, Gt = NULL, ...)
 \item \code{Dc}: matrix of customer covariates (n_cust, p_dim). If NULL, defaults to local level.
 }}
 
-\item{n_topic}{Number of latent topics (Z)}
+\item{n_topic}{Number of latent topics (Z).}
 
 \item{Gt}{System matrix (p_dim x p_dim). Defaults to a local level model.}
 
 \item{...}{Additional hyperparameters for priors.}
 }
 \value{
-An object of class "mrdltm_model"
+An object of class "mrdltm_model".
 }
 \description{
 Constructor for an MR-DLTM object.

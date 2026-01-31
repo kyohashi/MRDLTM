@@ -3,17 +3,17 @@
 #' @description
 #' Creates the initial states required for the MCMC(Gibbs Sampler)
 #'
-#' @param active_data A data frame of active observations which means (c,i,t) combo in C x Ic x Tc
-#' @param n_item Number of items (I)
-#' @param n_cust Number of customers (C)
-#' @param n_topic Number of latent topics (Z)
-#' @param length_time Length of time points (T)
-#' @param n_var Number of marketing covariates (M)
-#' @param p_dim Dimension of the DLM staete vector (alpha_zt)
+#' @param active_data A data frame of active observations (c, i, t) in C x Ic x Tc.
+#' @param n_item Number of items (I).
+#' @param n_cust Number of customers (C).
+#' @param n_topic Number of latent topics (Z).
+#' @param n_time Number of time points (T).
+#' @param n_var Number of marketing covariates (M).
+#' @param p_dim Dimension of the DLM state vector (alpha_zt).
 #'
-#' @return An environment containing initial values
+#' @return An environment containing initial values.
 #' @noRd
-init_state = function(active_data, n_item, n_cust, n_topic, length_time, n_var, p_dim){
+init_state = function(active_data, n_item, n_cust, n_topic, n_time, n_var, p_dim){
 
   # Create a new environment for the state.
   # This avoids the overhead of list copying in every MCMC iteration.
@@ -39,18 +39,18 @@ init_state = function(active_data, n_item, n_cust, n_topic, length_time, n_var, 
   n_z_dlm = n_topic - 1 # for identifiability
 
   # --- latent obs. (eta_zct) ---
-  state$eta_zct = array(0, dim = c(n_z_dlm, n_cust, length_time))
+  state$eta_zct = array(0, dim = c(n_z_dlm, n_cust, n_time))
 
   # --- inner state (alpha_zt) ---
-  state$alpha_zt = array(0, dim = c(n_z_dlm, length_time, p_dim))
+  state$alpha_zt = array(0, dim = c(n_z_dlm, n_time, p_dim))
 
   # --- DLM variances ---
   state$a2_z = rep(1.0, n_z_dlm) # obs variance
   state$b2_z = rep(0.1, n_z_dlm) # system variance
 
   # --- Polya-Gamma parameters ---
-  state$omega_zct = array(1, dim = c(n_z_dlm, n_cust, length_time))
-  state$kappa_zct = array(0, dim = c(n_z_dlm, n_cust, length_time))
+  state$omega_zct = array(1, dim = c(n_z_dlm, n_cust, n_time))
+  state$kappa_zct = array(0, dim = c(n_z_dlm, n_cust, n_time))
 
   return(state)
 }
@@ -62,7 +62,7 @@ init_state = function(active_data, n_item, n_cust, n_topic, length_time, n_var, 
 #' 1. The item i belongs to Ic (items purchased by customer c at least once).
 #' 2. The time t belongs to Tc (time points where customer c made at least one purchase).
 #'
-#' @param data A data frame containing (cust, item, time, y_cit)
+#' @param data A data frame containing (cust, item, time, y_cit).
 #'
 #' @return A filtered data frame of active observations.
 #' @importFrom dplyr group_by filter mutate ungroup select semi_join
@@ -125,7 +125,7 @@ compute_log_likelihood = function(active_data, state, x_it) {
 #' @param parameter Name of the parameter group to extract.
 #' @param ... Not used.
 #'
-#' @return A 3D array (iteration, chain, parameter)
+#' @return A 3D array (iteration, chain, parameter).
 #' @export
 as.array.mrdltm_mcmc = function(x, parameter = "log_lik", ...) {
   samples = x[[parameter]]
@@ -185,7 +185,7 @@ as.array.mrdltm_mcmc = function(x, parameter = "log_lik", ...) {
 #' @param burnin Number of iterations to discard. Defaults to 0.
 #' @param thin Interval for thinning. Defaults to 1.
 #'
-#' @return A 3D array (iteration, chain, parameter)
+#' @return A 3D array (iteration, chain, parameter).
 #' @export
 extract_samples = function(x, parameter = "log_lik", burnin = 0, thin = 1) {
   # Call the S3 method as.array to get the full array

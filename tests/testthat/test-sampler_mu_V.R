@@ -10,7 +10,7 @@ test_that("sample_mu_V runs without error", {
     n_item = n_item,
     n_cust = 1,
     n_topic = n_topic,
-    length_time = 1,
+    n_time = 1,
     n_var = n_var,
     p_dim = 1
   )

@@ -9,11 +9,11 @@
 #'     \item \code{x_it}: 3D array of marketing covariates (item, time, n_var)
 #'     \item \code{Dc}: matrix of customer covariates (n_cust, p_dim). If NULL, defaults to local level.
 #'   }
-#' @param n_topic Number of latent topics (Z)
+#' @param n_topic Number of latent topics (Z).
 #' @param Gt System matrix (p_dim x p_dim). Defaults to a local level model.
 #' @param ... Additional hyperparameters for priors.
 #'
-#' @return An object of class "mrdltm_model"
+#' @return An object of class "mrdltm_model".
 #' @export
 mrdltm_model = function(observations, n_topic = 3, Gt = NULL, ...){
 

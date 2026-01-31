@@ -17,12 +17,12 @@ test_that("sample_u correctly samples utilities", {
     n_item = n_item,
     n_cust = n_cust,
     n_topic = n_topic,
-    length_time = 2,
+    n_time = 2,
     n_var = n_var,
     p_dim = 1
   )
 
-  x_it <- array(c(1, 0.5), dim = c(1, 2, 2))
+  x_it = array(c(1, 0.5), dim = c(1, 2, 2))
 
   # --- test ---
   sample_u(active_data, state, x_it, n_item, n_topic, n_cust, n_var)

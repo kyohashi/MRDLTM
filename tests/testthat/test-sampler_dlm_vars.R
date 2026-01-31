@@ -1,13 +1,13 @@
 test_that("sample_dlm_vars updates variances without error", {
   # --- Setup ---
   n_topic = 2
-  length_time = 5
+  n_time = 5
   p_dim = 2
   n_cust = 10
 
   state = new.env()
-  state$alpha_zt = array(rnorm(1 * length_time * p_dim), dim = c(1, length_time, p_dim))
-  state$eta_zct = array(rnorm(1 * n_cust * length_time), dim = c(1, n_cust, length_time))
+  state$alpha_zt = array(rnorm(1 * n_time * p_dim), dim = c(1, n_time, p_dim))
+  state$eta_zct = array(rnorm(1 * n_cust * n_time), dim = c(1, n_cust, n_time))
   state$a2_z = rep(1.0, 1)
   state$b2_z = rep(1.0, 1)
 
@@ -18,14 +18,14 @@ test_that("sample_dlm_vars updates variances without error", {
   # For testing, assume all customers are active
   active_data = expand.grid(
     cust = 1:n_cust,
-    time = 1:length_time
+    time = 1:n_time
   )
 
   # --- Execution ---
   # Note: You must update the R wrapper `sample_dlm_vars` to accept `active_data`
   # and pass `active_data$cust` and `active_data$time` to C++.
   expect_error(
-    sample_dlm_vars(active_data, state, Dc, n_topic, length_time, n_cust, p_dim, priors),
+    sample_dlm_vars(active_data, state, Dc, n_topic, n_time, n_cust, p_dim, priors),
     NA
   )
 

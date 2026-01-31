@@ -9,13 +9,13 @@
 #' @param Dc Matrix of customer covariates (n_cust x p_dim).
 #' @param n_cust Total number of customers (C).
 #' @param n_topic Total number of topics (Z).
-#' @param length_time Total length of time points (T).
+#' @param n_time Total number of time points (T).
 #' @param p_dim Dimension of customer covariates (P).
 #'
 #' @return NULL
 #' @importFrom pgdraw pgdraw
 #' @noRd
-sample_eta = function(active_data, state, Dc, n_cust, n_topic, length_time, p_dim) {
+sample_eta = function(active_data, state, Dc, n_cust, n_topic, n_time, p_dim) {
 
   # Step 1: Prepare Softmax-based PG parameters
   prep = sample_eta_prepare_cpp(
@@ -24,7 +24,7 @@ sample_eta = function(active_data, state, Dc, n_cust, n_topic, length_time, p_di
     obs_time     = as.integer(active_data$time),
     eta_zct_flat = as.numeric(state$eta_zct),
     n_topic      = n_topic,
-    n_time       = length_time,
+    n_time       = n_time,
     n_cust       = n_cust
   )
 
@@ -46,7 +46,7 @@ sample_eta = function(active_data, state, Dc, n_cust, n_topic, length_time, p_di
     Dc_mat        = as.matrix(Dc),
     a2_z          = as.numeric(state$a2_z),
     n_topic       = n_topic,
-    n_time        = length_time,
+    n_time        = n_time,
     n_cust        = n_cust,
     p_dim         = p_dim
   )

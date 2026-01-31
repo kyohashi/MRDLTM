@@ -5,9 +5,9 @@
 #'
 #' @param state An environment containing the current MCMC state.
 #' @param priors A list of hyperparameters from the model object.
-#' @param n_item Number of items (I)
-#' @param n_topic Number of latent topics (Z)
-#' @param n_var Number of marketing covariates including intercept (M)
+#' @param n_item Number of items (I).
+#' @param n_topic Number of latent topics (Z).
+#' @param n_var Number of marketing covariates including intercept (M).
 #'
 #' @return NULL
 #' @importFrom MASS mvrnorm

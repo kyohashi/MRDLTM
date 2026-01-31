@@ -8,7 +8,7 @@
 #' @param state An environment containing the current MCMC state.
 #' @param Dc Matrix of customer covariates (n_cust x p_dim).
 #' @param n_topic Total number of topics (Z).
-#' @param length_time Total length of time points (T).
+#' @param n_time Total number of time points (T).
 #' @param n_cust Total number of customers (C).
 #' @param p_dim Dimension of customer covariates (P).
 #' @param priors A list of hyperparameters from the model object.
@@ -16,7 +16,7 @@
 #' @return NULL
 #' @importFrom stats rgamma
 #' @noRd
-sample_dlm_vars = function(active_data, state, Dc, n_topic, length_time, n_cust, p_dim, priors) {
+sample_dlm_vars = function(active_data, state, Dc, n_topic, n_time, n_cust, p_dim, priors) {
   # Default hyperparameters if not provided
   a2_shape = if (!is.null(priors$a2_shape)) priors$a2_shape else 0.01
   a2_scale = if (!is.null(priors$a2_scale)) priors$a2_scale else 0.01
@@ -34,7 +34,7 @@ sample_dlm_vars = function(active_data, state, Dc, n_topic, length_time, n_cust,
     b2_prior_shape = b2_shape,
     b2_prior_scale = b2_scale,
     n_topic        = n_topic,
-    n_time         = length_time,
+    n_time         = n_time,
     n_cust         = n_cust,
     p_dim          = p_dim
   )
