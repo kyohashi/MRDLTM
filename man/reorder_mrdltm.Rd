@@ -9,16 +9,19 @@ reorder_mrdltm(res, burnin = 0)
 \arguments{
 \item{res}{A list containing MCMC samples from mrdltm_mcmc.}
 
-\item{burnin}{Integer. Number of ORIGINAL iterations to discard.}
+\item{burnin}{Integer. Number of ORIGINAL iterations to discard (applied after
+accounting for thinning that was already applied during MCMC). Default is 0.}
 }
 \value{
 A list of MCMC samples with corrected labels.
 }
 \description{
-Aligns topic labels across MCMC iterations using \code{label.switching} package.
-Automatically selects the algorithm based on the availability of 'z_cit':
-\itemize{
-\item If \code{store_z = TRUE}: Uses the \strong{ECR algorithm}. Efficient for large Z but requires memory for Z.
-\item If \code{store_z = FALSE}: Uses the \strong{PRA algorithm}. Standard method using parameters, slower for large Z.
+Aligns topic labels across MCMC iterations using Stephens' algorithm
+(Stephens, 2000) from the \code{label.switching} package. This method uses
+allocation probabilities stored during MCMC to find optimal permutations
+via the Kullback-Leibler divergence criterion.
 }
+\references{
+Stephens, M. (2000). Dealing with label switching in mixture models.
+Journal of the Royal Statistical Society: Series B, 62(4), 795-809.
 }

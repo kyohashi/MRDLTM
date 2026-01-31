@@ -1,15 +1,16 @@
 #' Generate Toy Data for MR-DLTM
 #'
 #' @description
-#' Generates synthetic data based on the Market Response Dynamic Linear Topic Model(MR-DLTM).
+#' Generates synthetic data based on the Market Response Dynamic Linear Topic Model (MR-DLTM).
 #'
-#' @param n_cust Number of customers (C)
-#' @param n_item Number of items (I)
-#' @param n_topic Number of latent topics (Z)
-#' @param length_time Length of time points (T)
-#' @param n_var Number of marketing covariates including intercept (M)
-#' @param p_dim Dimension of customer covariates including intercept (P)
-#' @param purchase_prob Degree of sparcity
+#' @param n_cust Number of customers (C).
+#' @param n_item Number of items (I).
+#' @param n_topic Number of latent topics (Z).
+#' @param n_time Number of time points (T).
+#' @param n_var Number of marketing covariates including intercept (M).
+#' @param p_dim Dimension of customer covariates including intercept (P).
+#' @param sparsity Controls data sparsity via probit intercept adjustment.
+#'   Lower values produce sparser data. Default is 0.05.
 #'
 #' @return A list containing:
 #' \itemize{
@@ -18,13 +19,18 @@
 #' }
 #' @importFrom stats rnorm qnorm
 #' @export
-generate_toy_data = function(n_cust = 10, n_item = 50, n_topic = 3, length_time = 30, n_var = 2, p_dim = 1, purchase_prob=0.05) {
+generate_toy_data = function(n_cust = 10,
+                             n_item = 50,
+                             n_topic = 3,
+                             n_time = 30,
+                             n_var = 2,
+                             p_dim = 1,
+                             sparsity = 0.05) {
   # --- 1. Generate Marketing Covariates (x_it) ---
   # x_it: [item, time, n_var]
-  # x_it = array(rnorm(n_item*length_time*n_var), dim = c(n_item, length_time, n_var))
-  x_it = array(1, dim = c(n_item, length_time, n_var))
+  x_it = array(1, dim = c(n_item, n_time, n_var))
   if (n_var > 1) {
-    x_it[, , 2:n_var] = rnorm(n_item * length_time * (n_var - 1))
+    x_it[, , 2:n_var] = rnorm(n_item * n_time * (n_var - 1))
   }
 
   # --- 2. Generate Customer Covariates (Dc) ---
@@ -45,8 +51,8 @@ generate_toy_data = function(n_cust = 10, n_item = 50, n_topic = 3, length_time 
     }
   }
 
-  # for sparcity specification
-  intercept_shift = qnorm(purchase_prob) * sqrt(n_var + 1)
+  # Adjust intercept for sparsity
+  intercept_shift = qnorm(sparsity) * sqrt(n_var + 1)
   beta_zi[, , 1] = beta_zi[, , 1] + intercept_shift
 
   # --- 4. Generate Dynamic Topic Occupancy (DLM) ---
@@ -56,11 +62,11 @@ generate_toy_data = function(n_cust = 10, n_item = 50, n_topic = 3, length_time 
   b2_z = rep(0.01, n_z_dlm) # System variance
 
   # alpha_zt: [Z-1, T, p_dim]
-  alpha_zt = array(0, dim = c(n_z_dlm, length_time, p_dim))
+  alpha_zt = array(0, dim = c(n_z_dlm, n_time, p_dim))
   for (z in 1:n_z_dlm) {
     # Initial state alpha_z,t=1
     alpha_zt[z, 1, ] = rnorm(p_dim, sd = 0.5)
-    for (t in 2:length_time) {
+    for (t in 2:n_time) {
       # Random walk: alpha_t = alpha_{t-1} + N(0, b2_z)
       alpha_zt[z, t, ] = alpha_zt[z, t - 1, ] + rnorm(p_dim, sd = sqrt(b2_z[z]))
     }
@@ -68,9 +74,9 @@ generate_toy_data = function(n_cust = 10, n_item = 50, n_topic = 3, length_time 
 
   # --- 5. Generate Latent Occupancy (eta) and Probabilities (theta) ---
   # eta_zct = Dc %*% alpha_zt + epsilon
-  theta_czt = array(0, dim = c(n_cust, length_time, n_topic))
+  theta_czt = array(0, dim = c(n_cust, n_time, n_topic))
 
-  for (t in 1:length_time) {
+  for (t in 1:n_time) {
     # Store eta for Z-1 topics
     eta_tmp = matrix(0, nrow = n_cust, ncol = n_topic) # Last column stays 0 for baseline
     for (z in 1:n_z_dlm) {
@@ -86,8 +92,8 @@ generate_toy_data = function(n_cust = 10, n_item = 50, n_topic = 3, length_time 
   }
 
   # --- 6. Generate Purchase Data (y_cit) ---
-  total_obs = n_cust * n_item * length_time
-  indices = expand.grid(cust = 1:n_cust, item = 1:n_item, time = 1:length_time)
+  total_obs = n_cust * n_item * n_time
+  indices = expand.grid(cust = 1:n_cust, item = 1:n_item, time = 1:n_time)
 
   y_cit = integer(total_obs)
   z_cit = integer(total_obs)

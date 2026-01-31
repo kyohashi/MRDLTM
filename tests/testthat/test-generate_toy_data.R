@@ -2,7 +2,7 @@ test_that("generate_toy_data produces correct dimensions and structure", {
   n_cust = 5
   n_item = 10
   n_topic = 3
-  length_time = 12
+  n_time = 12
   n_var = 2
   p_dim = 2
 
@@ -10,7 +10,7 @@ test_that("generate_toy_data produces correct dimensions and structure", {
     n_cust = n_cust,
     n_item = n_item,
     n_topic = n_topic,
-    length_time = length_time,
+    n_time = n_time,
     n_var = n_var,
     p_dim = p_dim
   )
@@ -21,10 +21,10 @@ test_that("generate_toy_data produces correct dimensions and structure", {
 
   # 2. Check Observation Dimensions
   # data: Total rows should be C * I * T
-  expect_equal(nrow(toy$observations$data), n_cust * n_item * length_time)
+  expect_equal(nrow(toy$observations$data), n_cust * n_item * n_time)
 
   # x_it: [item, time, n_var]
-  expect_equal(dim(toy$observations$x_it), c(n_item, length_time, n_var))
+  expect_equal(dim(toy$observations$x_it), c(n_item, n_time, n_var))
 
   # Dc: [n_cust, p_dim]
   expect_equal(dim(toy$observations$Dc), c(n_cust, p_dim))

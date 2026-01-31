@@ -207,19 +207,22 @@ extract_samples = function(x, parameter = "log_lik", burnin = 0, thin = 1) {
 #' Post-hoc Label Switching Correction for MR-DLTM
 #'
 #' @description
-#' Aligns topic labels across MCMC iterations using `label.switching` package.
-#' Automatically selects the algorithm based on the availability of 'z_cit':
-#' \itemize{
-#'   \item If \code{store_z = TRUE}: Uses the **ECR algorithm**. Efficient for large Z but requires memory for Z.
-#'   \item If \code{store_z = FALSE}: Uses the **PRA algorithm**. Standard method using parameters, slower for large Z.
-#' }
+#' Aligns topic labels across MCMC iterations using Stephens' algorithm
+#' (Stephens, 2000) from the `label.switching` package. This method uses
+#' allocation probabilities stored during MCMC to find optimal permutations
+#' via the Kullback-Leibler divergence criterion.
 #'
 #' @param res A list containing MCMC samples from mrdltm_mcmc.
-#' @param burnin Integer. Number of ORIGINAL iterations to discard.
+#' @param burnin Integer. Number of ORIGINAL iterations to discard (applied after
+#'   accounting for thinning that was already applied during MCMC). Default is 0.
 #'
 #' @return A list of MCMC samples with corrected labels.
 #'
-#' @importFrom label.switching label.switching
+#' @references
+#' Stephens, M. (2000). Dealing with label switching in mixture models.
+#' Journal of the Royal Statistical Society: Series B, 62(4), 795-809.
+#'
+#' @importFrom label.switching stephens
 #' @export
 reorder_mrdltm = function(res, burnin = 0) {
 
@@ -229,106 +232,54 @@ reorder_mrdltm = function(res, burnin = 0) {
   n_topic = dim(res$beta_zi)[2]
 
   # Determine indices to keep based on original burnin count
-  n_skip  = floor(burnin / thin_rate)
-  idx     = (n_skip + 1):n_total_samples
-  m_post  = length(idx)
+  n_skip = floor(burnin / thin_rate)
+  idx = (n_skip + 1):n_total_samples
+  m_post = length(idx)
 
   if (m_post <= 0) stop("Burn-in exceeds total iterations.")
 
-  # Common: Find Pivot Index (Iteration with max log-likelihood)
-  # Note: log_lik is usually full length, so we subset it to find the best in the post-burnin set
-  log_lik_post = res$log_lik[idx]
-  pivot_local_idx = which.max(log_lik_post) # Index relative to idx
-  pivot_global_idx = idx[pivot_local_idx]   # Index relative to total samples
+  # --- 2. Run Stephens' Algorithm ---
+  has_prob = !is.null(res$prob_z)
 
-  perms = NULL
-
-  # --- 2. Branching Logic based on store_z ---
-  has_z = !is.null(res$z_cit)
-
-  if (has_z) {
-    # ==========================================
-    # PATH A: ECR Algorithm (store_z = TRUE)
-    # ==========================================
-    cat("z_cit found. Running ECR algorithm (Method: ECR)...\n")
-
-    # Extract Z for post-burnin only
-    # res$z_cit is [Iter x Obs]
-    z_subset = res$z_cit[idx, , drop = FALSE]
-
-    # Pivot Z vector
-    zpivot = z_subset[pivot_local_idx, ]
-
-    # Run ECR
-    # ECR uses the latent allocations to find the best permutation
-    ls_res = label.switching::label.switching(
-      method = "ECR",
-      z      = z_subset,
-      zpivot = zpivot,
-      K      = n_topic
-    )
-
-    perms = as.matrix(ls_res$permutations$ECR)
-
-    # Clean up memory
-    rm(z_subset, ls_res); gc()
-
-  } else {
-    # ==========================================
-    # PATH B: PRA Algorithm (store_z = FALSE)
-    # ==========================================
-    cat("z_cit NOT found. Running PRA algorithm (Method: PRA)...\n")
-
-    # Prepare MCMC input for PRA (using Beta)
-    # PRA requires: [MCMC Iterations x K x Parameters]
-    n_item = dim(res$beta_zi)[3]
-    n_var  = dim(res$beta_zi)[4]
-
-    # Flatten Item x Var dimensions
-    mcmc_input = array(0, dim = c(m_post, n_topic, n_item * n_var))
-    for (k in seq_len(n_topic)) {
-      mcmc_input[, k, ] = matrix(res$beta_zi[idx, k, , ], nrow = m_post)
-    }
-
-    # Dummy Z (required by label.switching function signature even for PRA,
-    # though PRA relies on 'mcmc' and 'prapivot')
-    # We create a minimal dummy that satisfies the check (must contain 1:K)
-    z_dummy = matrix(rep(seq_len(n_topic), m_post), nrow = m_post, byrow = TRUE)
-
-    # Pivot Parameter Matrix
-    prapivot = mcmc_input[pivot_local_idx, , ]
-
-    # Run PRA
-    ls_res = label.switching::label.switching(
-      method   = "PRA",
-      mcmc     = mcmc_input,
-      prapivot = prapivot,
-      z        = z_dummy,
-      K        = n_topic
-    )
-
-    perms = as.matrix(ls_res$permutations$PRA)
-
-    # Clean up memory
-    rm(mcmc_input, z_dummy, ls_res); gc()
+  if (!has_prob) {
+    stop("prob_z not found. This should not happen with mrdltm_mcmc() output.")
   }
+
+  cat("Running Stephens' algorithm for label switching correction...\n")
+
+  # Extract probability array for post-burnin iterations
+  # prob_z is [n_save x n_prob_sample x n_topic]
+  p_subset = res$prob_z[idx, , , drop = FALSE]
+
+  # Run Stephens' algorithm
+  # Input p: [iterations x observations x K]
+  ls_res = label.switching::stephens(p = p_subset)
+
+  perms = ls_res$permutations
+
+  # Clean up memory
+  rm(p_subset, ls_res)
+  gc()
 
   # --- 3. Apply Corrections (Internal Helper Functions) ---
 
   # Helper: Shift logic for Location Parameters (alpha, eta) where Baseline = 0
   apply_rel_shift_update = function(arr, perms, n_topic, idx) {
     d_orig = dim(arr)
-    out_dims = d_orig; out_dims[1] = length(idx)
+    out_dims = d_orig
+    out_dims[1] = length(idx)
 
-    if (d_orig[2] != n_topic - 1) return(arr[idx, , , , drop=FALSE])
+    if (d_orig[2] != n_topic - 1) return(arr[idx, , , , drop = FALSE])
 
     result = array(0, dim = out_dims)
     for (i in seq_len(length(idx))) {
       m = idx[i]
-      p_row = perms[i, ]; inv_p = order(p_row)
-      k_orig_base = inv_p[n_topic] # Original topic assigned to New Baseline
+      p_row = perms[i, ]
+      inv_p = order(p_row)
+      k_orig_base = inv_p[n_topic]
 
-      slice_dims = d_orig[-1]; slice_dims[1] = n_topic
+      slice_dims = d_orig[-1]
+      slice_dims[1] = n_topic
       full_slice = array(0, dim = slice_dims)
 
       if (length(d_orig) == 4) {
@@ -350,14 +301,17 @@ reorder_mrdltm = function(res, burnin = 0) {
     return(result)
   }
 
-  # Helper: Reorder logic for K-1 Parameters (mu, phi, sigma, a2) without shift
+  # Helper: Reorder logic for K-1 Parameters (a2, b2, etc.) without shift
   apply_k_minus_1_reorder = function(arr, perms, n_topic, idx, impute_fn = mean) {
-    d_orig = dim(arr); out_dims = d_orig; out_dims[1] = length(idx)
+    d_orig = dim(arr)
+    out_dims = d_orig
+    out_dims[1] = length(idx)
     result = array(0, dim = out_dims)
 
     for (i in seq_len(length(idx))) {
-      m = idx[i]; inv_p = order(perms[i, ])
-      vals = arr[m, , drop=FALSE]
+      m = idx[i]
+      inv_p = order(perms[i, ])
+      vals = arr[m, , drop = FALSE]
       if (length(d_orig) == 2) {
         full_vec = c(vals, impute_fn(vals))
         result[i, ] = full_vec[inv_p[1:(n_topic - 1)]]
@@ -370,10 +324,13 @@ reorder_mrdltm = function(res, burnin = 0) {
 
   # Helper: Standard Reordering for K-dim Parameters
   apply_standard_reorder = function(arr, perms, idx) {
-    d_orig = dim(arr); out_dims = d_orig; out_dims[1] = length(idx)
+    d_orig = dim(arr)
+    out_dims = d_orig
+    out_dims[1] = length(idx)
     result = array(0, dim = out_dims)
     for (i in seq_len(length(idx))) {
-      m = idx[i]; inv_p = order(perms[i, ])
+      m = idx[i]
+      inv_p = order(perms[i, ])
       if (length(d_orig) == 3) result[i, , ] = arr[m, inv_p, ]
       else if (length(d_orig) == 4) result[i, , , ] = arr[m, inv_p, , ]
       else result[i, ] = arr[m, inv_p]
@@ -381,7 +338,7 @@ reorder_mrdltm = function(res, burnin = 0) {
     return(result)
   }
 
-  # --- 4. MAIN LOOP Over All Elements in List ---
+  # --- 4. Apply Corrections to All Parameters ---
   cat("Applying corrections to all parameters...\n")
   res_out = list()
 
@@ -389,41 +346,34 @@ reorder_mrdltm = function(res, burnin = 0) {
     obj = res[[name]]
     if (is.null(obj)) next
 
-    # 1. Handle Z_CIT (Values need mapping if it exists)
-    if (name == "z_cit") {
-      # Only process if it's a matrix (i.e., was stored)
-      if (is.matrix(obj)) {
-        n_obs = ncol(obj)
-        z_out = matrix(0L, nrow = m_post, ncol = n_obs)
-        for (i in seq_len(m_post)) {
-          m = idx[i]; p_vec = perms[i, ]
-          z_out[i, ] = p_vec[obj[m, ]]
-        }
-        res_out[[name]] = z_out
-      }
+    # Skip prob_z and prob_idx (internal for label switching)
+    if (name %in% c("prob_z", "prob_idx")) {
+      next
+    }
 
-      # 2. Handle Location Parameters (Alpha, Eta, Mu) -> Shift Logic
-    } else if (name %in% c("alpha_zt", "eta_zct", "mu_zt")) {
+    # Handle Location Parameters (Alpha, Eta) -> Shift Logic
+    if (name %in% c("alpha_zt", "eta_zct", "mu_zt")) {
       res_out[[name]] = apply_rel_shift_update(obj, perms, n_topic, idx)
 
-      # 3. Handle Standard K-dim Parameters (beta_zi etc.)
+    # Handle Standard K-dim Parameters (beta_zi etc.)
     } else if (is.array(obj) && length(dim(obj)) >= 2 && dim(obj)[2] == n_topic) {
       res_out[[name]] = apply_standard_reorder(obj, perms, idx)
 
-      # 4. Handle Other K-1 Parameters (Variance/Phi etc.)
+    # Handle K-1 Parameters (Variance parameters)
     } else if (name %in% c("a2_z", "phi_z", "sigma_z", "b2_z") &&
                is.array(obj) && dim(obj)[2] == n_topic - 1) {
       res_out[[name]] = apply_k_minus_1_reorder(obj, perms, n_topic, idx)
 
-      # 5. Default: Remove burn-in and retain metadata
+    # Default: Remove burn-in and retain metadata
     } else {
       if (name == "thin") {
         res_out[[name]] = obj
       } else if (is.vector(obj) && length(obj) == n_total_samples) {
         res_out[[name]] = obj[idx]
       } else if (is.array(obj) && dim(obj)[1] == n_total_samples) {
-        args = rep(list(bquote()), length(dim(obj))); args[[1]] = idx
-        res_out[[name]] = do.call("[", c(list(obj), args, drop=FALSE))
+        args = rep(list(bquote()), length(dim(obj)))
+        args[[1]] = idx
+        res_out[[name]] = do.call("[", c(list(obj), args, drop = FALSE))
       } else {
         res_out[[name]] = obj
       }

@@ -2,17 +2,21 @@
 #'
 #' @description
 #' Run the Gibbs sampler using a pre-defined mrdltm_model object.
+#' Allocation probabilities are stored for post-hoc label switching correction
+#' using Stephens' algorithm.
 #'
 #' @param model An object of class "mrdltm_model".
 #' @param iter Total MCMC iterations.
 #' @param burnin Burn-in iterations.
 #' @param thin MCMC thin setting.
-#' @param store_z A flag to store z_cit
+#' @param prob_sample_ratio Numeric between 0 and 1. Proportion of observations to sample for
+#'   storing allocation probabilities. Lower values reduce memory usage. Default is 0.1 (10%).
 #' @param quiet A flag to show a progress-bar
 #'
 #' @return A list of class "mrdltm_mcmc" containing the MCMC samples.
 #' @export
-mrdltm_mcmc = function(model, iter = 2000, burnin = 1000, thin = 1, store_z = FALSE, quiet = TRUE) {
+mrdltm_mcmc = function(model, iter = 2000, burnin = 1000, thin = 1,
+                       prob_sample_ratio = 0.1, quiet = TRUE) {
 
   # --- 1. Preparation ---
   obs = model$observations
@@ -44,35 +48,46 @@ mrdltm_mcmc = function(model, iter = 2000, burnin = 1000, thin = 1, store_z = FA
   # --- 3. Pre-allocate history ---
   # Calculate save dimensions for heavy parameters
   n_save = floor((iter - burnin) / thin)
+
+  # Set up probability sampling for Stephens' algorithm
+  n_prob_sample = max(1, floor(n_obs * prob_sample_ratio))
+  prob_idx = sort(sample.int(n_obs, n_prob_sample))
+
   # We store all iterations to allow users to inspect burn-in if needed.
   history = list(
     beta_zi   = array(0, dim = c(n_save, n_topic, n_item, n_var)),
-    mu_i   = array(0, dim = c(n_save, n_item, n_var)),
-    V_i    = array(0, dim = c(n_save, n_item, n_var, n_var)),
+    mu_i      = array(0, dim = c(n_save, n_item, n_var)),
+    V_i       = array(0, dim = c(n_save, n_item, n_var, n_var)),
     alpha_zt  = array(0, dim = c(n_save, n_topic - 1, length_time, p_dim)),
     eta_zct   = array(0, dim = c(n_save, n_topic - 1, n_cust, length_time)),
-    z_cit     = if (store_z) array(0L, dim = c(n_save, n_obs)) else NULL,
-    a2_z   = matrix(0, nrow = n_save, ncol = n_topic - 1),
-    b2_z   = matrix(0, nrow = n_save, ncol = n_topic - 1),
-    log_lik = numeric(iter),
+    prob_z    = array(0, dim = c(n_save, n_prob_sample, n_topic)),
+    prob_idx  = prob_idx,
+    a2_z      = matrix(0, nrow = n_save, ncol = n_topic - 1),
+    b2_z      = matrix(0, nrow = n_save, ncol = n_topic - 1),
+    log_lik   = numeric(iter),
     # Metadata for post-processing
-    iter = iter,
-    thin = thin,
-    burnin = burnin,
-    store_z = store_z
+    iter   = iter,
+    thin   = thin,
+    burnin = burnin
   )
 
   # --- 4. Gibbs Sampling Loop ---
   message(sprintf("Starting Gibbs Sampling: %d iterations (burn-in: %d)", iter, burnin))
 
   # Timers for progress display
-  start_total <- proc.time()
-  start_block <- proc.time()
+  start_total = proc.time()
+  start_block = proc.time()
 
   for (m in 1:iter) {
 
     # A. Topic Assignment
-    sample_z(active_data, state, obs$x_it, n_item, n_topic, n_cust, n_var)
+    # Use version with probability tracking only when saving this iteration
+    should_save = (m > burnin && (m - burnin) %% thin == 0)
+    if (should_save) {
+      prob_m = sample_z_with_prob(active_data, state, obs$x_it, n_item, n_topic, n_cust, n_var, prob_idx)
+    } else {
+      sample_z(active_data, state, obs$x_it, n_item, n_topic, n_cust, n_var)
+    }
 
     # B. Latent Utility
     sample_u(active_data, state, obs$x_it, n_item, n_topic, n_cust, n_var)
@@ -88,10 +103,10 @@ mrdltm_mcmc = function(model, iter = 2000, burnin = 1000, thin = 1, store_z = FA
 
     # --- 5. Record MCMC Samples ---
     # Always record log-likelihood
-    history$log_lik[m] <- compute_log_likelihood(active_data, state, obs$x_it)
+    history$log_lik[m] = compute_log_likelihood(active_data, state, obs$x_it)
     # Record heavy parameters only after burn-in and according to thinning
-    if (m > burnin && (m - burnin) %% thin == 0) {
-      s_idx <- (m - burnin) / thin
+    if (should_save) {
+      s_idx = (m - burnin) / thin
 
       history$beta_zi[s_idx, , , ]  = state$beta_zi
       history$mu_i[s_idx, , ]       = state$mu_i
@@ -100,18 +115,16 @@ mrdltm_mcmc = function(model, iter = 2000, burnin = 1000, thin = 1, store_z = FA
       history$eta_zct[s_idx, , , ]  = state$eta_zct
       history$a2_z[s_idx, ]         = state$a2_z
       history$b2_z[s_idx, ]         = state$b2_z
-      if (store_z) {
-        history$z_cit[s_idx, ] <- as.integer(state$z_cit)
-        }
+      history$prob_z[s_idx, , ]     = prob_m
     }
 
     # --- Progress message every 100 iterations ---
     if (!quiet && (m %% 100 == 0 || m == iter)) {
-      current_time <- proc.time()
-      elapsed_block <- (current_time - start_block)[3]
-      elapsed_total <- (current_time - start_total)[3]
+      current_time = proc.time()
+      elapsed_block = (current_time - start_block)[3]
+      elapsed_total = (current_time - start_total)[3]
 
-      phase <- if (m <= burnin) "Burn-in" else "Sampling"
+      phase = if (m <= burnin) "Burn-in" else "Sampling"
 
       message(sprintf(
         "[%s] Iteration %d/%d - Last 100: %.2fs (Total: %.1fs)",
@@ -119,7 +132,7 @@ mrdltm_mcmc = function(model, iter = 2000, burnin = 1000, thin = 1, store_z = FA
       ))
 
       # Reset block timer
-      start_block <- current_time
+      start_block = current_time
     }
   }
 

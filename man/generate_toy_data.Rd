@@ -8,26 +8,27 @@ generate_toy_data(
   n_cust = 10,
   n_item = 50,
   n_topic = 3,
-  length_time = 30,
+  n_time = 30,
   n_var = 2,
   p_dim = 1,
-  purchase_prob = 0.05
+  sparsity = 0.05
 )
 }
 \arguments{
-\item{n_cust}{Number of customers (C)}
+\item{n_cust}{Number of customers (C).}
 
-\item{n_item}{Number of items (I)}
+\item{n_item}{Number of items (I).}
 
-\item{n_topic}{Number of latent topics (Z)}
+\item{n_topic}{Number of latent topics (Z).}
 
-\item{length_time}{Length of time points (T)}
+\item{n_time}{Number of time points (T).}
 
-\item{n_var}{Number of marketing covariates including intercept (M)}
+\item{n_var}{Number of marketing covariates including intercept (M).}
 
-\item{p_dim}{Dimension of customer covariates including intercept (P)}
+\item{p_dim}{Dimension of customer covariates including intercept (P).}
 
-\item{purchase_prob}{Degree of sparcity}
+\item{sparsity}{Controls data sparsity via probit intercept adjustment.
+Lower values produce sparser data. Default is 0.05.}
 }
 \value{
 A list containing:
@@ -37,5 +38,5 @@ A list containing:
 }
 }
 \description{
-Generates synthetic data based on the Market Response Dynamic Linear Topic Model(MR-DLTM).
+Generates synthetic data based on the Market Response Dynamic Linear Topic Model (MR-DLTM).
 }

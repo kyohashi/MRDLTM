@@ -180,6 +180,30 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// sample_z_with_prob_cpp
+List sample_z_with_prob_cpp(IntegerVector y_cit, NumericVector eta_flat, NumericVector beta_flat, NumericVector x_flat, IntegerVector cust_idx, IntegerVector item_idx, IntegerVector time_idx, NumericVector rand_u, IntegerVector prob_idx, int n_topic, int n_item, int n_time, int n_cust, int n_var);
+RcppExport SEXP _MRDLTM_sample_z_with_prob_cpp(SEXP y_citSEXP, SEXP eta_flatSEXP, SEXP beta_flatSEXP, SEXP x_flatSEXP, SEXP cust_idxSEXP, SEXP item_idxSEXP, SEXP time_idxSEXP, SEXP rand_uSEXP, SEXP prob_idxSEXP, SEXP n_topicSEXP, SEXP n_itemSEXP, SEXP n_timeSEXP, SEXP n_custSEXP, SEXP n_varSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerVector >::type y_cit(y_citSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type eta_flat(eta_flatSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type beta_flat(beta_flatSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type x_flat(x_flatSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type cust_idx(cust_idxSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type item_idx(item_idxSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type time_idx(time_idxSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type rand_u(rand_uSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type prob_idx(prob_idxSEXP);
+    Rcpp::traits::input_parameter< int >::type n_topic(n_topicSEXP);
+    Rcpp::traits::input_parameter< int >::type n_item(n_itemSEXP);
+    Rcpp::traits::input_parameter< int >::type n_time(n_timeSEXP);
+    Rcpp::traits::input_parameter< int >::type n_cust(n_custSEXP);
+    Rcpp::traits::input_parameter< int >::type n_var(n_varSEXP);
+    rcpp_result_gen = Rcpp::wrap(sample_z_with_prob_cpp(y_cit, eta_flat, beta_flat, x_flat, cust_idx, item_idx, time_idx, rand_u, prob_idx, n_topic, n_item, n_time, n_cust, n_var));
+    return rcpp_result_gen;
+END_RCPP
+}
 // compute_log_likelihood_cpp
 double compute_log_likelihood_cpp(IntegerVector z_cit, IntegerVector item_idx, IntegerVector time_idx, IntegerVector y_cit, NumericVector beta_zi_flat, NumericVector x_it_flat, int n_topic, int n_item, int n_time, int n_var);
 RcppExport SEXP _MRDLTM_compute_log_likelihood_cpp(SEXP z_citSEXP, SEXP item_idxSEXP, SEXP time_idxSEXP, SEXP y_citSEXP, SEXP beta_zi_flatSEXP, SEXP x_it_flatSEXP, SEXP n_topicSEXP, SEXP n_itemSEXP, SEXP n_timeSEXP, SEXP n_varSEXP) {
@@ -210,6 +234,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MRDLTM_sample_mu_V_cpp", (DL_FUNC) &_MRDLTM_sample_mu_V_cpp, 10},
     {"_MRDLTM_sample_u_cpp", (DL_FUNC) &_MRDLTM_sample_u_cpp, 11},
     {"_MRDLTM_sample_z_cpp", (DL_FUNC) &_MRDLTM_sample_z_cpp, 13},
+    {"_MRDLTM_sample_z_with_prob_cpp", (DL_FUNC) &_MRDLTM_sample_z_with_prob_cpp, 14},
     {"_MRDLTM_compute_log_likelihood_cpp", (DL_FUNC) &_MRDLTM_compute_log_likelihood_cpp, 10},
     {NULL, NULL, 0}
 };

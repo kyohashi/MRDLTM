@@ -9,7 +9,7 @@ mrdltm_mcmc(
   iter = 2000,
   burnin = 1000,
   thin = 1,
-  store_z = FALSE,
+  prob_sample_ratio = 0.1,
   quiet = TRUE
 )
 }
@@ -22,7 +22,8 @@ mrdltm_mcmc(
 
 \item{thin}{MCMC thin setting.}
 
-\item{store_z}{A flag to store z_cit}
+\item{prob_sample_ratio}{Numeric between 0 and 1. Proportion of observations to sample for
+storing allocation probabilities. Lower values reduce memory usage. Default is 0.1 (10\%).}
 
 \item{quiet}{A flag to show a progress-bar}
 }
@@ -31,4 +32,6 @@ A list of class "mrdltm_mcmc" containing the MCMC samples.
 }
 \description{
 Run the Gibbs sampler using a pre-defined mrdltm_model object.
+Allocation probabilities are stored for post-hoc label switching correction
+using Stephens' algorithm.
 }

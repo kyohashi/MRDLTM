@@ -8,3 +8,7 @@
 dev/
 *.Rproj
 .Rproj.user/
+
+# Claude Code
+.claude/
+CLAUDE.md
